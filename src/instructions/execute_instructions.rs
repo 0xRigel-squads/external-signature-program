@@ -1,5 +1,8 @@
 use crate::{
-    state::{ExecutionAccount, ExternallySignedAccount, SignatureScheme, SignerExecutionScheme},
+    state::{
+        ExecutionAccount, ExternallySignedAccount, P256NativeAccountData, SignatureScheme,
+        SignerExecutionScheme,
+    },
     utils::{
         create_instruction_execution_account_metas, hash, validate_nonce, CompiledInstruction,
         NonceData, SlotHashes, TruncatedSlot,
@@ -166,7 +169,10 @@ pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> Pr
         SignatureScheme::P256Webauthn => {
             ExecuteInstructionsContext::<P256WebauthnAccountData>::load(accounts, &args)?
         }
-        SignatureScheme::P256Native => todo!(),
+        SignatureScheme::P256Native => {
+            todo!("fix incompatible return types");
+            // ExecuteInstructionsContext::<P256NativeAccountData>::load(accounts, &args)?
+        }
     };
 
     // Get the instruction execution payload hash

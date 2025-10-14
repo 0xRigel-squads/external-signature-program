@@ -7,7 +7,7 @@ use crate::p256::utils::{
 use solana_keypair::Keypair;
 use solana_signer::{EncodableKey, Signer};
 
-use p256::ecdsa::{SigningKey, VerifyingKey};
+use p256::ecdsa::{Signature, SigningKey};
 use rand::rngs::OsRng;
 
 fn test_creation_from_fixture(path: &str) {
@@ -26,7 +26,7 @@ fn test_creation_from_fixture(path: &str) {
     create_and_send_svm_transaction(&mut svm, instructions, &payer.pubkey(), vec![&payer]).unwrap();
 }
 
-fn test_creation_from_keypair() {
+fn test_creation_from_keypair(p256_keypair: SigningKey, message: &[u8], signature: Signature) {
     let payer = Keypair::read_from_file(
         "tests/p256/keypairs/sinf1bu1CMQaMzeDoysAU7dAp2gs5j2V3vM9W5ZXAyB.json",
     )
@@ -35,10 +35,15 @@ fn test_creation_from_keypair() {
 
     let (_hash, truncated_slot) = get_valid_slothash(&svm);
     // Get the passkey account and instructions from our abstracted function
-    let p256_keypair = SigningKey::random(&mut OsRng::new());
-    let (_account_pubkey, _public_key, instructions) =
-        initialize_native_account(&p256_keypair, &payer.pubkey(), &truncated_slot, &program_id)
-            .unwrap();
+    let (_account_pubkey, _public_key, instructions) = initialize_native_account(
+        &p256_keypair,
+        &signature,
+        message,
+        &payer.pubkey(),
+        &truncated_slot,
+        &program_id,
+    )
+    .unwrap();
 
     // Create and submit the transaction
     create_and_send_svm_transaction(&mut svm, instructions, &payer.pubkey(), vec![&payer]).unwrap();
@@ -46,6 +51,8 @@ fn test_creation_from_keypair() {
 
 #[cfg(test)]
 mod test_initialization {
+    use p256::ecdsa::signature::Signer;
+
     use super::*;
 
     #[test]
@@ -70,6 +77,21 @@ mod test_initialization {
 
     #[test]
     fn test_native_creation() {
-        test_creation_from_keypair();
+        let key = SigningKey::random(&mut OsRng);
+        let message = b"let me get your autograph";
+        let signature: Signature = Signer::sign(&key, message);
+
+        test_creation_from_keypair(key, message, signature);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_native_creation_invalid_sig() {
+        let key = SigningKey::random(&mut OsRng);
+        let bad_key = SigningKey::random(&mut OsRng);
+        let message = b"hmm, seems suspicious";
+        let signature: Signature = Signer::sign(&key, message);
+
+        test_creation_from_keypair(bad_key, message, signature);
     }
 }

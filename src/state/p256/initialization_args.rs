@@ -15,7 +15,6 @@ pub struct P256NativeRawInitializationData {
 #[repr(C)]
 pub struct P256NativeParsedInitializationData {
     pub public_key: CompressedP256PublicKey,
-    pub counter: u64,
 }
 
 impl TryFrom<P256NativeRawInitializationData> for P256NativeParsedInitializationData {
@@ -24,7 +23,6 @@ impl TryFrom<P256NativeRawInitializationData> for P256NativeParsedInitialization
     fn try_from(data: P256NativeRawInitializationData) -> Result<Self, ProgramError> {
         Ok(Self {
             public_key: CompressedP256PublicKey::new(&data.public_key),
-            counter: 0,
         })
     }
 }

@@ -40,9 +40,6 @@ impl ExternallySignedAccountData for P256NativeAccountData {
     }
 
     fn get_initialization_payload() -> &'static [u8] {
-        // NOTE: I'm changing the string because
-        // it's not a passkey, but it's unclear
-        // if this is meaningful or not.
         b"initialize_native"
     }
 
@@ -126,6 +123,8 @@ impl ExternallySignedAccountData for P256NativeAccountData {
             &precompile_instruction,
             &instructions_sysvar_account,
         )?;
+
+        // parser.get_signature_payload(index)
 
         // Check that there is only one signature
         let num_signatures = parser.num_signatures();
