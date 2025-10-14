@@ -5,4 +5,5 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 pub enum SignatureScheme {
     P256Webauthn = 0,
     // more schemes here
+    P256Native = 1,
 }

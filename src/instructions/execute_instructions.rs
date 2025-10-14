@@ -1,7 +1,8 @@
 use crate::{
     state::{ExecutionAccount, ExternallySignedAccount, SignatureScheme, SignerExecutionScheme},
     utils::{
-        create_instruction_execution_account_metas, hash, validate_nonce, CompiledInstruction, NonceData, SlotHashes, TruncatedSlot
+        create_instruction_execution_account_metas, hash, validate_nonce, CompiledInstruction,
+        NonceData, SlotHashes, TruncatedSlot,
     },
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -165,6 +166,7 @@ pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> Pr
         SignatureScheme::P256Webauthn => {
             ExecuteInstructionsContext::<P256WebauthnAccountData>::load(accounts, &args)?
         }
+        SignatureScheme::P256Native => todo!(),
     };
 
     // Get the instruction execution payload hash

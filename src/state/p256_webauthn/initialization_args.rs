@@ -3,10 +3,11 @@ use pinocchio::program_error::ProgramError;
 
 use crate::{
     errors::ExternalSignatureProgramError,
+    state::CompressedP256PublicKey,
     utils::{hash, signatures::ClientDataJsonReconstructionParams, SmallVec},
 };
 
-use super::{CompressedP256PublicKey, RpIdInformation};
+use super::RpIdInformation;
 
 #[derive(BorshDeserialize, BorshSerialize, Clone)]
 pub struct P256RawInitializationData {

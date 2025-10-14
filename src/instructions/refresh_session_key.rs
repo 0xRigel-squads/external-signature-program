@@ -13,7 +13,11 @@ use crate::{
         ExternallySignedAccount, ExternallySignedAccountData, P256WebauthnAccountData, SessionKey,
         SignatureScheme,
     },
-    utils::{hash, nonce::{validate_nonce, TruncatedSlot}, NonceData, SlotHashes, SmallVec},
+    utils::{
+        hash,
+        nonce::{validate_nonce, TruncatedSlot},
+        NonceData, SlotHashes, SmallVec,
+    },
 };
 
 // Raw arguments for refresh session key instruction data
@@ -71,8 +75,9 @@ impl<'a, T: ExternallySignedAccountData> RefreshSessionKeyContext<'a, T> {
         let verification_args =
             T::RawVerificationData::try_from_slice(&args.verification_data.as_slice())
                 .map_err(|_| ExternalSignatureProgramError::InvalidExtraVerificationDataArgs)?;
-        let parsed_verification_data: <T as ExternallySignedAccountData>::ParsedVerificationData = T::ParsedVerificationData::try_from(verification_args)
-            .map_err(|_| ExternalSignatureProgramError::InvalidExtraVerificationDataArgs)?;
+        let parsed_verification_data: <T as ExternallySignedAccountData>::ParsedVerificationData =
+            T::ParsedVerificationData::try_from(verification_args)
+                .map_err(|_| ExternalSignatureProgramError::InvalidExtraVerificationDataArgs)?;
 
         // Load and check the relevant accounts
         let externally_signed_account =
@@ -126,6 +131,7 @@ pub fn process_refresh_session_key(accounts: &[AccountInfo], data: &[u8]) -> Pro
         SignatureScheme::P256Webauthn => {
             RefreshSessionKeyContext::<P256WebauthnAccountData>::load(accounts, &args)?
         }
+        SignatureScheme::P256Native => todo!(),
     };
 
     // Get the refresh session key payload hash

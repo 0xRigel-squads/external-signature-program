@@ -109,6 +109,7 @@ pub fn process_execute_instructions_sessioned(
         SignatureScheme::P256Webauthn => {
             ExecuteInstructionsSessionedContext::<P256WebauthnAccountData>::load(accounts, &args)?
         }
+        SignatureScheme::P256Native => todo!(),
     };
 
     // Initialize containers for both data structures

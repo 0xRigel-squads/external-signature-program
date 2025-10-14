@@ -1,9 +1,9 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use pinocchio::program_error::ProgramError;
 
-use crate::utils::signatures::ClientDataJsonReconstructionParams;
-
-use super::CompressedP256PublicKey;
+use crate::{
+    state::CompressedP256PublicKey, utils::signatures::ClientDataJsonReconstructionParams,
+};
 
 #[derive(BorshDeserialize, BorshSerialize, Clone)]
 pub struct P256RawVerificationData {

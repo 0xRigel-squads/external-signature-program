@@ -13,7 +13,7 @@ use crate::{
     errors::ExternalSignatureProgramError,
     state::{
         AccountSeedsTrait, ExternallySignedAccount, ExternallySignedAccountData,
-        P256WebauthnAccountData, SessionKey, SignatureScheme,
+        P256NativeAccountData, P256WebauthnAccountData, SessionKey, SignatureScheme,
     },
     utils::{
         check_account_uninitialized, hash,
@@ -182,25 +182,10 @@ impl<'a, T: ExternallySignedAccountData> InitializeExternalAccountContext<'a, T>
     }
 }
 
-// Processes the initialize external account instruction
-pub fn process_initialize_external_account(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
-    // Parse the initialization args
-    let initialization_data =
-        InitializeAccountArgs::try_from_slice(data).map_err(|_| ProgramError::InvalidArgument)?;
-
-    // Parse the signature scheme
-    let signature_scheme =
-        SignatureScheme::try_from_primitive(initialization_data.signature_scheme)
-            .map_err(|_| ExternalSignatureProgramError::InvalidSignatureScheme)?;
-
-    // Load the initialization context based on the signature scheme
-    let mut initialization_context =
-        match signature_scheme {
-            SignatureScheme::P256Webauthn => InitializeExternalAccountContext::<
-                P256WebauthnAccountData,
-            >::load(accounts, &initialization_data)?,
-        };
-
+// Helper function to process initialization for any account type
+fn initialize_account_with_context<T: ExternallySignedAccountData>(
+    mut initialization_context: InitializeExternalAccountContext<T>,
+) -> ProgramResult {
     // Get the signature specific initialization payload
     let signature_specific_initialization_payload = initialization_context
         .accounts
@@ -233,4 +218,34 @@ pub fn process_initialize_external_account(accounts: &[AccountInfo], data: &[u8]
     )?;
 
     Ok(())
+}
+
+// Processes the initialize external account instruction
+pub fn process_initialize_external_account(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
+    // Parse the initialization args
+    let initialization_data =
+        InitializeAccountArgs::try_from_slice(data).map_err(|_| ProgramError::InvalidArgument)?;
+
+    // Parse the signature scheme
+    let signature_scheme =
+        SignatureScheme::try_from_primitive(initialization_data.signature_scheme)
+            .map_err(|_| ExternalSignatureProgramError::InvalidSignatureScheme)?;
+
+    // Load the initialization context based on the signature scheme and process it
+    match signature_scheme {
+        SignatureScheme::P256Webauthn => {
+            let context = InitializeExternalAccountContext::<P256WebauthnAccountData>::load(
+                accounts,
+                &initialization_data,
+            )?;
+            initialize_account_with_context(context)
+        }
+        SignatureScheme::P256Native => {
+            let context = InitializeExternalAccountContext::<P256NativeAccountData>::load(
+                accounts,
+                &initialization_data,
+            )?;
+            initialize_account_with_context(context)
+        }
+    }
 }
