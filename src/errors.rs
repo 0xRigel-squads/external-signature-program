@@ -31,6 +31,8 @@ pub enum ExternalSignatureProgramError {
     InvalidSignatureIndex,
     #[error("Invalid signature offset")]
     InvalidSignatureOffset,
+    #[error("Invalid instruction index")]
+    InvalidInstructionIndex,
 
     /// Account Ser/Des Related Errors
     #[error("Error initializing header")]
@@ -88,6 +90,8 @@ pub enum ExternalSignatureProgramError {
     #[error("User not present")]
     P256UserNotPresent,
     #[error("Message Mismatch")]
+
+    /// P256 Native Related Errors
     P256MessageMismatch,
 }
 

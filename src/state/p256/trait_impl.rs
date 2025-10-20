@@ -115,8 +115,12 @@ impl ExternallySignedAccountData for P256NativeAccountData {
         _extra_verification_data: &Self::ParsedVerificationData,
         payload: &[u8],
     ) -> Result<(), ProgramError> {
-        let idx = instructions_sysvar_account.load_current_index();
-        let sig_idx = idx - 1;
+        let sig_idx = match instructions_sysvar_account.load_current_index() {
+            // The precompile ix needs to be at idx 0, so the first one has
+            // to start at instruction idx 1, and precompile signature idx 0.
+            0 => Err(ExternalSignatureProgramError::InvalidInstructionIndex),
+            n => Ok(n - 1),
+        }? as usize;
 
         // Load the ix at index 0
         let precompile_instruction = instructions_sysvar_account.load_instruction_at(0)?;
@@ -127,16 +131,14 @@ impl ExternallySignedAccountData for P256NativeAccountData {
             &instructions_sysvar_account,
         )?;
 
-        // parser.get_signature_payload(index)
-
         // Check that there is only one signature
         let num_signatures = parser.num_signatures();
         if num_signatures != 1 {
             return Err(ExternalSignatureProgramError::InvalidNumPrecompileSignatures.into());
         }
 
-        // Get the 0th signature payload
-        let signature_payload = parser.get_signature_payload(sig_idx as usize)?;
+        // Get the nth signature payload
+        let signature_payload = parser.get_signature_payload(sig_idx)?;
 
         if payload != signature_payload.message {
             return Err(ExternalSignatureProgramError::P256MessageMismatch.into());

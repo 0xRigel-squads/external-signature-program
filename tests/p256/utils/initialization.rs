@@ -117,18 +117,8 @@ pub fn initialize_native_account(
         .to_encoded_point(true)
         .to_bytes();
 
-    // NOTE: right now we can sign anything,
-    // the trait implementation for the native p256 account
-    // just uses the p256r1 parser to get the pubkey,
-    // then it checks if the pubkey matches the pubkey we're
-    // creating the externally signed account for.
-    // It doesn't actually check wether we signed any specific message.
-    // let der_sig: Signature = p256_keypair.sign(message).expect("should sign");
     let der_signature = p256_signature.to_der();
 
-    // Get the public key from the fixture data
-    // let public_key = webauthn_data.public_key.unwrap();
-    // Create secp256r1 verification instruction
     let precompile_ix =
         new_secp256r1_instruction(der_signature.as_bytes(), message, &p256_public_key, None)
             .unwrap();
@@ -150,7 +140,82 @@ pub fn initialize_native_account(
         tmp
     };
 
-    println!("sized bytes");
+    // Construct the initialization instruction data
+    let p256_args = P256NativeRawInitializationData {
+        public_key: sized_pubkey_bytes,
+    };
+
+    let initialize_args = InitializeAccountArgs {
+        slothash: slot_num.clone(),
+        signature_scheme: SignatureScheme::P256Native.into(),
+        initialization_data: SmallVec::<u8, u8>::try_from(
+            to_vec(&p256_args).expect("failed to convert args to vec"),
+        )
+        .expect("failed to create smallvec from args"),
+        session_key: None,
+    };
+
+    let mut instruction_data = Vec::new();
+    instruction_data.push(0); // instruction discriminator
+    instruction_data.extend_from_slice(&to_vec(&initialize_args).expect("failed to extend slice"));
+
+    // // Create the account initialization instruction
+    let initialize_account_ix = Instruction {
+        program_id: *program_id,
+        accounts: vec![
+            AccountMeta::new(account_to_initialize, false),
+            AccountMeta::new(*payer, true),
+            AccountMeta::new_readonly(Pubkey::new_from_array(INSTRUCTIONS_ID), false),
+            AccountMeta::new_readonly(Pubkey::new_from_array(SLOT_HASHES_ID), false),
+            AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
+        ],
+        data: instruction_data,
+    };
+
+    let instructions = vec![precompile_ix, initialize_account_ix];
+
+    Ok((account_to_initialize, p256_public_key.into(), instructions))
+}
+
+/// Returns a tuple containing:
+/// 1. The pubkey of the initialized account
+/// 2. A vector of instructions (precompile verification, transfer, and initialization)
+pub fn initialize_multiple_native_accounts(
+    keypairs: &[&SigningKey],
+    signatures: &[&Signature],
+    message: &[u8],
+    payer: &Pubkey,
+    slot_num: &TruncatedSlot,
+    program_id: &Pubkey,
+) -> Result<(Pubkey, Vec<u8>, Vec<Instruction>), Box<dyn std::error::Error>> {
+    // Prepare message for secp256r1 verification
+    let p256_public_key = VerifyingKey::from(p256_keypair)
+        .to_encoded_point(true)
+        .to_bytes();
+
+    let der_signature = p256_signature.to_der();
+
+    let precompile_ix =
+        new_secp256r1_instruction(der_signature.as_bytes(), message, &p256_public_key, None)
+            .unwrap();
+
+    // Calculate public key hash
+    let public_key_hash = solana_nostd_sha256::hashv(&[&p256_public_key]);
+
+    let seeds: [&[u8]; 2] = [b"native", public_key_hash.as_slice()];
+
+    // Find the program-derived address for the account
+    let (account_to_initialize, _account_bump) =
+        Pubkey::try_find_program_address(&seeds, program_id)
+            .expect("failed to find program address");
+
+    println!("found pubkey address");
+    let sized_pubkey_bytes = {
+        let tmp = p256_public_key.clone().into_vec();
+        let tmp: [u8; 33] = tmp.try_into().expect("failed to convert vec into array");
+        tmp
+    };
+
     // Construct the initialization instruction data
     let p256_args = P256NativeRawInitializationData {
         public_key: sized_pubkey_bytes,
