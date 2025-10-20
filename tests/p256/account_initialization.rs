@@ -4,6 +4,7 @@ use crate::p256::utils::{
     initialization::initialize_passkey_account,
     svm::{create_and_send_svm_transaction, initialize_svm},
 };
+use base64::{engine::general_purpose, Engine as _};
 use solana_keypair::Keypair;
 use solana_signer::{EncodableKey, Signer};
 
@@ -78,10 +79,11 @@ mod test_initialization {
     #[test]
     fn test_native_creation() {
         let key = SigningKey::random(&mut OsRng);
-        let message = b"let me get your autograph";
-        let signature: Signature = Signer::sign(&key, message);
+        let message = b"6lAM3fBpGNqDOm_Wg0TXp8I6rU-yMK3Wtls4nr2TjiQ";
+        let message_bytes = general_purpose::URL_SAFE_NO_PAD.decode(message).unwrap();
+        let signature: Signature = Signer::sign(&key, &message_bytes);
 
-        test_creation_from_keypair(key, message, signature);
+        test_creation_from_keypair(key, &message_bytes, signature);
     }
 
     #[test]

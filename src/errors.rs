@@ -87,6 +87,8 @@ pub enum ExternalSignatureProgramError {
     P256UserNotVerified,
     #[error("User not present")]
     P256UserNotPresent,
+    #[error("Message Mismatch")]
+    P256MessageMismatch,
 }
 
 impl From<ExternalSignatureProgramError> for ProgramError {

@@ -113,8 +113,11 @@ impl ExternallySignedAccountData for P256NativeAccountData {
         &mut self,
         instructions_sysvar_account: &Instructions<Ref<'a, [u8]>>,
         _extra_verification_data: &Self::ParsedVerificationData,
-        _payload: &[u8],
+        payload: &[u8],
     ) -> Result<(), ProgramError> {
+        let idx = instructions_sysvar_account.load_current_index();
+        let sig_idx = idx - 1;
+
         // Load the ix at index 0
         let precompile_instruction = instructions_sysvar_account.load_instruction_at(0)?;
 
@@ -133,7 +136,11 @@ impl ExternallySignedAccountData for P256NativeAccountData {
         }
 
         // Get the 0th signature payload
-        let signature_payload = parser.get_signature_payload(0)?;
+        let signature_payload = parser.get_signature_payload(sig_idx as usize)?;
+
+        if payload != signature_payload.message {
+            return Err(ExternalSignatureProgramError::P256MessageMismatch.into());
+        }
 
         // Check the payloads pubkey matches the account data
         let payload_pubkey = signature_payload.public_key;

@@ -189,7 +189,7 @@ pub fn print_initialization_payload() {
     let mut instruction_bytes: Vec<u8> = Vec::new();
     instruction_bytes.extend_from_slice(&hash);
     instruction_bytes.extend_from_slice(&nonce_signer.pubkey().to_bytes());
-    instruction_bytes.extend_from_slice(b"initialize_passkey");
+    instruction_bytes.extend_from_slice(b"initialize_native");
 
     let mut hasher = Sha256::new();
     hasher.update(&instruction_bytes);
