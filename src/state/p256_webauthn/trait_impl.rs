@@ -99,16 +99,14 @@ impl ExternallySignedAccountData for P256WebauthnAccountData {
     fn check_account(
         &self,
         account_info: &AccountInfo,
-        _args: &Self::ParsedVerificationData,
+        args: &Self::ParsedVerificationData,
     ) -> Result<Self::AccountSeeds, ProgramError> {
         // Since the counter needs to be updated, we always need to check that
         // the account is writable
         if !account_info.is_writable() {
             return Err(ExternalSignatureProgramError::P256AccountNotWritable.into());
         }
-        let derive_args = Self::DeriveAccountArgs {
-            public_key: self.public_key.to_bytes(),
-        };
+        let derive_args = Self::DeriveAccountArgs::from(args);
         // Check that the account matches the seeds
         let account_seeds = Self::derive_account(derive_args)?;
         if account_seeds.key.ne(account_info.key()) {
