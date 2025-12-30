@@ -57,3 +57,6 @@ diff.txt
 
 # Cursor files
 .cursor
+
+# Rust targets
+target/
