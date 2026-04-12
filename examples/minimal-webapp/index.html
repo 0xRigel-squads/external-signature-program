@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.png" />
     <title>External Signature Program Demo</title>
     <style>
       :root {
@@ -19,12 +20,20 @@
 
       body {
         margin: 0;
-        font-family: "Space Grotesk", "Satoshi", "Avenir Next", "Segoe UI", sans-serif;
+        font-family:
+          "Space Grotesk", "Satoshi", "Avenir Next", "Segoe UI", sans-serif;
         background:
-          radial-gradient(circle at 10% 0%, rgba(15, 118, 110, 0.12), transparent 32%),
-          radial-gradient(circle at 90% 18%, rgba(29, 78, 216, 0.1), transparent 28%),
-          linear-gradient(180deg, #f5f8fd 0%, #e9eef7 100%),
-          var(--bg);
+          radial-gradient(
+            circle at 10% 0%,
+            rgba(15, 118, 110, 0.12),
+            transparent 32%
+          ),
+          radial-gradient(
+            circle at 90% 18%,
+            rgba(29, 78, 216, 0.1),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #f5f8fd 0%, #e9eef7 100%), var(--bg);
         color: var(--ink);
       }
 
@@ -148,7 +157,9 @@
         color: #f8fafc;
         background: var(--accent);
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-        transition: transform 120ms ease, background 120ms ease;
+        transition:
+          transform 120ms ease,
+          background 120ms ease;
       }
 
       button:hover {
@@ -171,7 +182,8 @@
         box-shadow: none;
       }
 
-      code, pre {
+      code,
+      pre {
         font-family: "JetBrains Mono", "SFMono-Regular", "Menlo", monospace;
         font-size: 0.9rem;
       }
@@ -264,8 +276,12 @@
             <div class="action-group">
               <h3>Setup</h3>
               <div class="action-row">
-                <button class="secondary" id="register">Initialize Passkey</button>
-                <button class="secondary" id="fund-passkey">Fund Account</button>
+                <button class="secondary" id="register">
+                  Initialize Passkey
+                </button>
+                <button class="secondary" id="fund-passkey">
+                  Fund Account
+                </button>
               </div>
             </div>
 
@@ -280,7 +296,9 @@
             <div class="action-group">
               <h3>Sessioned Usage</h3>
               <div class="action-row">
-                <button class="secondary" id="session-init">Initialize Session Key</button>
+                <button class="secondary" id="session-init">
+                  Initialize Session Key
+                </button>
                 <button id="memo-sessioned">Send Sessioned Memo</button>
               </div>
             </div>
@@ -301,4 +319,4 @@
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
-  </html>
+</html>
