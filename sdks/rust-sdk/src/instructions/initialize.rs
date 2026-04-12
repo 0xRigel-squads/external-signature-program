@@ -10,11 +10,7 @@ use solana_program::{
     pubkey::Pubkey,
     system_program::ID as SYSTEM_PROGRAM_ID,
 };
-
-const INSTRUCTIONS_SYSVAR: [u8; 32] = [
-    6, 167, 213, 23, 25, 44, 92, 81, 33, 140, 201, 76, 61, 74, 241, 127, 88, 218, 238, 8, 155, 161,
-    253, 68, 227, 219, 217, 138, 0, 0, 0, 0,
-];
+use std::str::FromStr;
 
 /// Builds an initialize passkey account instruction
 ///
@@ -49,8 +45,9 @@ pub fn initialize_passkey_account(
     let initialize_args = InitializeAccountArgs {
         slothash: slot_hash,
         signature_scheme: SignatureScheme::P256Webauthn.into(),
-        initialization_data: SmallVec::<u8, u8>::try_from(to_vec(&p256_webauthn_args)?)
-            .map_err(|_| SdkError::SerializationError("Initialization data too large".to_string()))?,
+        initialization_data: SmallVec::<u8, u8>::try_from(to_vec(&p256_webauthn_args)?).map_err(
+            |_| SdkError::SerializationError("Initialization data too large".to_string()),
+        )?,
         session_key: None,
     };
 
@@ -64,7 +61,10 @@ pub fn initialize_passkey_account(
         accounts: vec![
             AccountMeta::new(account_to_initialize, false),
             AccountMeta::new(*payer, true),
-            AccountMeta::new_readonly(Pubkey::new_from_array(INSTRUCTIONS_SYSVAR), false),
+            AccountMeta::new_readonly(
+                Pubkey::from_str("Sysvar1nstructions1111111111111111111111111").unwrap(),
+                false,
+            ),
             AccountMeta::new_readonly(Pubkey::new_from_array(SLOT_HASHES_ID), false),
             AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
         ],
@@ -109,8 +109,9 @@ pub fn initialize_passkey_account_with_session(
     let initialize_args = InitializeAccountArgs {
         slothash: slot_hash,
         signature_scheme: SignatureScheme::P256Webauthn.into(),
-        initialization_data: SmallVec::<u8, u8>::try_from(to_vec(&p256_webauthn_args)?)
-            .map_err(|_| SdkError::SerializationError("Initialization data too large".to_string()))?,
+        initialization_data: SmallVec::<u8, u8>::try_from(to_vec(&p256_webauthn_args)?).map_err(
+            |_| SdkError::SerializationError("Initialization data too large".to_string()),
+        )?,
         session_key: Some(session_key),
     };
 
@@ -124,7 +125,10 @@ pub fn initialize_passkey_account_with_session(
         accounts: vec![
             AccountMeta::new(account_to_initialize, false),
             AccountMeta::new(*payer, true),
-            AccountMeta::new_readonly(Pubkey::new_from_array(INSTRUCTIONS_SYSVAR), false),
+            AccountMeta::new_readonly(
+                Pubkey::from_str("Sysvar1nstructions1111111111111111111111111").unwrap(),
+                false,
+            ),
             AccountMeta::new_readonly(Pubkey::new_from_array(SLOT_HASHES_ID), false),
             AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
         ],

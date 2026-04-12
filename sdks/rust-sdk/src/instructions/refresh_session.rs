@@ -7,11 +7,7 @@ use external_signature_program::{
 };
 use solana_program::instruction::{AccountMeta, Instruction};
 use solana_pubkey::Pubkey;
-
-const INSTRUCTIONS_SYSVAR: [u8; 32] = [
-    6, 167, 213, 23, 25, 44, 92, 81, 33, 140, 201, 76, 61, 74, 241, 127, 88, 218, 238, 8, 155, 161,
-    253, 68, 227, 219, 217, 138, 0, 0, 0, 0,
-];
+use std::str::FromStr;
 
 /// Builds a refresh session key instruction
 ///
@@ -57,7 +53,10 @@ pub fn refresh_session_key(
         program_id: Pubkey::new_from_array(PROGRAM_ID),
         accounts: vec![
             AccountMeta::new(*passkey_account, false),
-            AccountMeta::new_readonly(Pubkey::new_from_array(INSTRUCTIONS_SYSVAR), false),
+            AccountMeta::new_readonly(
+                Pubkey::from_str("Sysvar1nstructions1111111111111111111111111").unwrap(),
+                false,
+            ),
             AccountMeta::new_readonly(Pubkey::new_from_array(SLOT_HASHES_ID), false),
             AccountMeta::new(*payer, true),
         ],
@@ -94,7 +93,13 @@ mod tests {
             expiration: 1000,
         };
 
-        let result = refresh_session_key(&webauthn_data, &passkey_account, &payer, slot_hash, session_key);
+        let result = refresh_session_key(
+            &webauthn_data,
+            &passkey_account,
+            &payer,
+            slot_hash,
+            session_key,
+        );
         assert!(result.is_ok());
     }
 }

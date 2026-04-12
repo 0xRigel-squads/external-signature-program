@@ -2,11 +2,14 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SdkError {
-    #[error("Invalid public key length: expected 64 bytes")]
-    InvalidPublicKeyLength,
+    #[error("Invalid secp256r1 signature format")]
+    InvalidSignatureFormat,
 
     #[error("Invalid signature length")]
     InvalidSignatureLength,
+
+    #[error("Message too large for secp256r1 precompile")]
+    MessageTooLarge,
 
     #[error("Failed to serialize data: {0}")]
     SerializationError(String),

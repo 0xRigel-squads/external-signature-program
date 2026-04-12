@@ -1,3 +1,4 @@
+pub use external_signature_program::state::SignerExecutionScheme;
 pub use external_signature_program::utils::signatures::{
     AuthType, ClientDataJsonReconstructionParams,
 };

@@ -1,13 +1,13 @@
+use external_signature_program::state::SessionKey;
 use external_signature_sdk::{
     instructions::{
-        create_secp256r1_instruction, execute_instructions, initialize_passkey_account,
-        refresh_session_key,
+        create_secp256r1_instruction, execute_instructions, execute_instructions_sessioned,
+        initialize_passkey_account, refresh_session_key,
     },
     pda::{derive_execution_account, derive_passkey_account},
-    types::{AuthType, WebAuthnData},
+    types::{AuthType, SignerExecutionScheme, WebAuthnData},
     TruncatedSlot,
 };
-use external_signature_program::state::SessionKey;
 use solana_program::instruction::Instruction;
 use solana_pubkey::Pubkey;
 
@@ -32,9 +32,9 @@ fn main() {
     println!("Example 3: Initialize Passkey Account");
     let webauthn_data = WebAuthnData::new(
         compressed_public_key,
-        vec![0u8; 64], // signature
-        vec![0u8; 37], // auth_data
-        vec![],        // client_data_json
+        vec![0x30, 0x06, 0x02, 0x01, 0x01, 0x02, 0x01, 0x01], // DER signature
+        vec![0u8; 37],                                        // auth_data
+        vec![],                                               // client_data_json
         AuthType::Create,
         false, // cross_origin
         false, // is_http
@@ -55,15 +55,18 @@ fn main() {
 
     // Example 4: Create secp256r1 precompile instruction
     println!("Example 4: Create Secp256r1 Precompile Instruction");
-    let uncompressed_public_key = [0x04u8; 64]; // Uncompressed public key for precompile
-    let signature = [0u8; 64];
+    let signature_der = [0x30, 0x06, 0x02, 0x01, 0x01, 0x02, 0x01, 0x01];
     let message = b"example message to verify";
 
     let precompile_ix =
-        create_secp256r1_instruction(&signature, message, &uncompressed_public_key, None).unwrap();
+        create_secp256r1_instruction(&signature_der, message, &compressed_public_key, None)
+            .unwrap();
 
     println!("  Precompile instruction created");
-    println!("  Instruction data length: {} bytes\n", precompile_ix.data.len());
+    println!(
+        "  Instruction data length: {} bytes\n",
+        precompile_ix.data.len()
+    );
 
     // Example 5: Execute instructions
     println!("Example 5: Execute Instructions with Passkey");
@@ -77,9 +80,9 @@ fn main() {
         &webauthn_data,
         &passkey_account,
         &payer,
-        slot_hash,
+        TruncatedSlot(0),
         vec![memo_ix],
-        vec![],
+        SignerExecutionScheme::ExecutionAccount,
     )
     .unwrap();
 
@@ -94,11 +97,37 @@ fn main() {
         expiration: 900, // 15 minutes
     };
 
-    let refresh_ix =
-        refresh_session_key(&webauthn_data, &passkey_account, &payer, slot_hash, session_key)
-            .unwrap();
+    let refresh_ix = refresh_session_key(
+        &webauthn_data,
+        &passkey_account,
+        &payer,
+        TruncatedSlot(0),
+        session_key,
+    )
+    .unwrap();
 
     println!("  Refresh session key instruction created");
     println!("  Instruction data length: {} bytes", refresh_ix.data.len());
-    println!("  Number of accounts: {}", refresh_ix.accounts.len());
+    println!("  Number of accounts: {}\n", refresh_ix.accounts.len());
+
+    // Example 7: Sessioned execution
+    println!("Example 7: Execute Instructions with Session Key");
+    let session_signer = Pubkey::new_from_array(session_key.key);
+    let sessioned_ix = execute_instructions_sessioned(
+        &passkey_account,
+        &session_signer,
+        vec![Instruction {
+            program_id: Pubkey::new_unique(),
+            accounts: vec![],
+            data: b"session call".to_vec(),
+        }],
+        SignerExecutionScheme::ExecutionAccount,
+    )
+    .unwrap();
+    println!("  Sessioned execute instruction created");
+    println!(
+        "  Instruction data length: {} bytes",
+        sessioned_ix.data.len()
+    );
+    println!("  Number of accounts: {}", sessioned_ix.accounts.len());
 }

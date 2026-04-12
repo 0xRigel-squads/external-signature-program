@@ -8,6 +8,7 @@ A Rust SDK for building instructions to interact with the External Signature Pro
 - **Instruction Builders**: Easy-to-use builders for all program instructions
   - Initialize passkey accounts
   - Execute instructions with passkey authentication
+  - Execute instructions with session keys
   - Refresh session keys
   - Create secp256r1 precompile verification instructions
 
@@ -17,7 +18,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-external-signature-sdk = { path = "./sdk" }
+external-signature-sdk = { path = "./sdks/rust-sdk" }
 ```
 
 ## Usage
@@ -62,9 +63,9 @@ let (passkey_account, init_ix) = initialize_passkey_account(
 
 // Create precompile verification instruction
 let precompile_ix = create_secp256r1_instruction(
-    &signature,
+    &signature_der,
     &message,
-    &uncompressed_public_key, // 64 bytes for precompile
+    &compressed_public_key, // 33-byte compressed SEC1 key
     None,
 )?;
 
@@ -75,6 +76,7 @@ let precompile_ix = create_secp256r1_instruction(
 
 ```rust
 use external_signature_sdk::instructions::execute_instructions;
+use external_signature_sdk::types::SignerExecutionScheme;
 
 let instructions = vec![
     // Your instructions here
@@ -82,20 +84,30 @@ let instructions = vec![
     transfer_instruction,
 ];
 
-let additional_accounts = vec![
-    // Additional account metas required by your instructions
-];
-
 let execute_ix = execute_instructions(
     &webauthn_data,
     &passkey_account,
-    &payer,
+    &nonce_signer,
     slot_hash,
     instructions,
-    additional_accounts,
+    SignerExecutionScheme::ExecutionAccount,
 )?;
 
 // Send transaction with [precompile_ix, execute_ix]
+```
+
+### Execute Instructions (Sessioned)
+
+```rust
+use external_signature_sdk::instructions::execute_instructions_sessioned;
+use external_signature_sdk::types::SignerExecutionScheme;
+
+let sessioned_ix = execute_instructions_sessioned(
+    &passkey_account,
+    &session_signer,
+    instructions,
+    SignerExecutionScheme::ExecutionAccount,
+)?;
 ```
 
 ### Refresh Session Key
@@ -126,8 +138,7 @@ let refresh_ix = refresh_session_key(
 
 - **Compressed keys (33 bytes)**: Used for account initialization and verification data
   - Format: `[parity_byte (1 byte)] + [x_coordinate (32 bytes)]`
-- **Uncompressed keys (64 bytes)**: Used for secp256r1 precompile instruction
-  - Format: `[x_coordinate (32 bytes)] + [y_coordinate (32 bytes)]`
+- **DER signatures**: Used as input for `create_secp256r1_instruction`, converted internally to compact low-S `(r || s)`
 
 ### Instruction Order
 
