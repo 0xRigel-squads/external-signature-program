@@ -6,7 +6,7 @@ description = "Rust SDK for interacting with the External Signature Program"
 license = "MIT"
 
 [dependencies]
-external-signature-program = { path = ".." }
+external-signature-program = { path = "../.." }
 solana-program = "2.2.1"
 solana-pubkey = "2.2.1"
 solana-nostd-sha256 = "0.1.3"

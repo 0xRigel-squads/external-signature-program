@@ -66,8 +66,8 @@ node_modules/
 */node_modules/
 
 # Dist & Compiled files
-ts-sdk/dist/
-ts-sdk/node_modules/
+sdks/ts-sdk/dist/
+sdks/ts-sdk/node_modules/
 examples/minimal-webapp/dist/
 examples/minimal-webapp/node_modules/
 

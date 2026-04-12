@@ -35,8 +35,8 @@ cargo test-sbf
 ## Project Structure
 
 - `src/` - Source code for the program
-- `sdk/` - Rust SDK for building external-signature instructions
-- `ts-sdk/` - TypeScript SDK for building external-signature instructions
+- `sdks/rust-sdk/` - Rust SDK for building external-signature instructions
+- `sdks/ts-sdk/` - TypeScript SDK for building external-signature instructions
 - `examples/` - Example applications using the SDKs
 - `tests/` - Test files with P256/WebAuthn examples
 - `docs/` - Documentation
