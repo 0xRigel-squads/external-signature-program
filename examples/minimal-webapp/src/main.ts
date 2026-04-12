@@ -24,15 +24,17 @@ import {
   createInitializePasskeyChallenge,
   createRefreshSessionKeyChallenge,
   createSecp256r1Instruction,
-  credentialIdToString,
   deriveExecutionAccount,
+  truncateSlotForValidator,
+} from "external-signature-ts-sdk";
+import type { WebAuthnData } from "external-signature-ts-sdk";
+import {
+  credentialIdToString,
   fromBase64Url,
   parseAuthenticationCredential,
   parseRegistrationCredential,
-  truncateSlotForValidator,
   toBase64Url,
-} from "external-signature-ts-sdk";
-import type { WebAuthnData } from "external-signature-ts-sdk";
+} from "external-signature-ts-sdk/webauthn";
 
 const MEMO_PROGRAM_ID = new PublicKey(
   "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
@@ -98,9 +100,18 @@ if (
 registerButton.addEventListener("click", () => void initializePasskey());
 memoButton.addEventListener("click", () => void sendMemoWithPasskey());
 sessionInitButton.addEventListener("click", () => void initializeSessionKey());
-sessionedMemoButton.addEventListener("click", () => void sendMemoWithSessionKey());
-fundPasskeyButton.addEventListener("click", () => void fundPasskeyForTransferTest());
-transferPasskeyButton.addEventListener("click", () => void sendTransferWithPasskey());
+sessionedMemoButton.addEventListener(
+  "click",
+  () => void sendMemoWithSessionKey(),
+);
+fundPasskeyButton.addEventListener(
+  "click",
+  () => void fundPasskeyForTransferTest(),
+);
+transferPasskeyButton.addEventListener(
+  "click",
+  () => void sendTransferWithPasskey(),
+);
 resetButton.addEventListener("click", resetLocalState);
 
 renderState();
@@ -645,12 +656,17 @@ async function getChallengeContext(): Promise<{
   };
 }
 
-async function ensureSessionSignerFunded(sessionSigner: PublicKey): Promise<void> {
+async function ensureSessionSignerFunded(
+  sessionSigner: PublicKey,
+): Promise<void> {
   if (!paymaster) {
     return;
   }
 
-  const balance = await connection.getBalance(sessionSigner, TRANSACTION_COMMITMENT);
+  const balance = await connection.getBalance(
+    sessionSigner,
+    TRANSACTION_COMMITMENT,
+  );
   if (balance >= SESSION_SIGNER_MIN_LAMPORTS) {
     return;
   }
@@ -666,8 +682,13 @@ async function ensureSessionSignerFunded(sessionSigner: PublicKey): Promise<void
     recentBlockhash: latest.blockhash,
   }).add(transfer);
   transaction.sign(paymaster);
-  const signature = await connection.sendRawTransaction(transaction.serialize());
-  await connection.confirmTransaction({ signature, ...latest }, TRANSACTION_COMMITMENT);
+  const signature = await connection.sendRawTransaction(
+    transaction.serialize(),
+  );
+  await connection.confirmTransaction(
+    { signature, ...latest },
+    TRANSACTION_COMMITMENT,
+  );
   log(
     `funded session signer ${sessionSigner.toBase58()} with ${SESSION_SIGNER_TOPUP_LAMPORTS / LAMPORTS_PER_SOL} SOL`,
   );
@@ -676,7 +697,9 @@ async function ensureSessionSignerFunded(sessionSigner: PublicKey): Promise<void
 function renderState(): void {
   const passkey = getStoredPasskey();
   const executionAccount = passkey
-    ? deriveExecutionAccount(new PublicKey(passkey.passkeyAccount))[0].toBase58()
+    ? deriveExecutionAccount(
+        new PublicKey(passkey.passkeyAccount),
+      )[0].toBase58()
     : "not initialized";
   const session = getStoredSession();
   const nowUnix = Math.floor(Date.now() / 1000);

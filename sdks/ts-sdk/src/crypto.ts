@@ -11,3 +11,7 @@ export function sha256Bytes(data: BytesLike): Uint8Array {
 export function encodeBase64Url(data: BytesLike): string {
   return base64urlnopad.encode(toBytes(data));
 }
+
+export function decodeBase64Url(value: string): Uint8Array {
+  return Uint8Array.from(base64urlnopad.decode(value));
+}

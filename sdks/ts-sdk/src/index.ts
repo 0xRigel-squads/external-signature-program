@@ -15,26 +15,27 @@ export {
   createSecp256r1Instruction,
   reconstructClientDataJsonForChallenge,
 } from "./instructions.js";
-export { createClientDataJsonReconstructionParams, reconstructClientDataJson } from "./clientDataJson.js";
+export {
+  GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE,
+  createClientDataJsonReconstructionParams,
+  reconstructClientDataJson,
+} from "./clientDataJson.js";
 export { PROGRAM_ID, INSTRUCTIONS_SYSVAR_ID, SLOT_HASHES_SYSVAR_ID } from "./constants.js";
 export { deriveExecutionAccount, derivePasskeyAccount } from "./pda.js";
 export { ExternalSignatureSdkError } from "./errors.js";
 export { truncateSlot } from "./bytes.js";
 export {
-  credentialIdToString,
-  decodeSpkiP256PublicKey,
-  fromBase64Url,
-  parseAuthenticationCredential,
-  parseClientDataJsonReconstructionParams,
-  parseDerSignatureToCompact,
-  parseRegistrationCredential,
-  toBase64Url,
-} from "./webauthn.js";
-export {
   AuthType,
   SignatureScheme,
   SignerExecutionScheme,
 } from "./types.js";
+export type {
+  ExecuteInstructionsInput,
+  ExecuteInstructionsSessionedInput,
+  InitializePasskeyAccountInput,
+  RefreshSessionKeyInput,
+  Secp256r1InstructionInput,
+} from "./instructions.js";
 export type {
   ClientDataJsonReconstructionParams,
   CreateClientDataJsonReconstructionParamsInput,

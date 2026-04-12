@@ -11,6 +11,8 @@ const TYPE_GET = 0x10;
 const FLAG_CROSS_ORIGIN = 0x01;
 const FLAG_HTTP_ORIGIN = 0x02;
 const FLAG_GOOGLE_EXTRA = 0x04;
+export const GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE =
+  "do not compare clientDataJSON against a template. See https://goo.gl/yabPex";
 
 /** Packs WebAuthn clientDataJSON reconstruction metadata into compact params. */
 export function createClientDataJsonReconstructionParams(
@@ -60,9 +62,7 @@ export function reconstructClientDataJson(
 
   const googleExtra =
     (params.typeAndFlags & FLAG_GOOGLE_EXTRA) !== 0
-      ? [
-          ",\"other_keys_can_be_added_here\":\"do not compare clientDataJSON against a template. See https://goo.gl/yabPex\"",
-        ]
+      ? [`,\"other_keys_can_be_added_here\":\"${GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE}\"`]
       : [];
 
   return concatBytes(utf8(base.join("")), utf8(googleExtra.join("")), utf8("}"));

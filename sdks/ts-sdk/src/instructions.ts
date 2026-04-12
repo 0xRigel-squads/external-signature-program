@@ -12,7 +12,7 @@ import {
   SLOT_HASHES_SYSVAR_ID,
   SYSTEM_PROGRAM_ID,
 } from "./constants.js";
-import { concatBytes, expectLength, truncateSlot, utf8 } from "./bytes.js";
+import { concatBytes, expectLength, expectMaxLength, truncateSlot, utf8 } from "./bytes.js";
 import { reconstructClientDataJson } from "./clientDataJson.js";
 import { createExecuteInstructionsChallenge, createInitializePasskeyChallenge, createRefreshSessionKeyChallenge } from "./challenges.js";
 import { sha256Bytes } from "./crypto.js";
@@ -82,7 +82,6 @@ export interface Secp256r1InstructionInput {
   message: Uint8Array;
   /** Compressed secp256r1 public key (33-byte SEC1). */
   publicKey: Uint8Array;
-  instructionIndex?: number;
 }
 
 /**
@@ -93,7 +92,7 @@ export function createSecp256r1Instruction(
   input: Secp256r1InstructionInput,
 ): TransactionInstruction {
   const signature = parseDerSignatureToCompact(input.signature);
-  const message = input.message;
+  const message = expectMaxLength(input.message, 0xffff, "precompile message");
   const publicKey = expectLength(input.publicKey, 33, "compressed public key");
   const dataStart = 2 + 14;
   const publicKeyOffset = dataStart;

@@ -25,6 +25,9 @@ export function toLittleEndianU16(value: number): Uint8Array {
 }
 
 export function toLittleEndianU64(value: bigint | number): Uint8Array {
+  if (typeof value === "number") {
+    invariant(Number.isSafeInteger(value), "u64 input number must be a safe integer");
+  }
   const big = typeof value === "bigint" ? value : BigInt(value);
   invariant(big >= 0n && big <= 0xffff_ffff_ffff_ffffn, "u64 out of range");
   const out = new Uint8Array(8);
@@ -45,6 +48,9 @@ export function concatBytes(...parts: BytesLike[]): Uint8Array {
 }
 
 export function truncateSlot(slot: number | bigint): number {
+  if (typeof slot === "number") {
+    invariant(Number.isSafeInteger(slot), "slot must be a safe integer");
+  }
   const big = typeof slot === "bigint" ? slot : BigInt(slot);
   invariant(big >= 0n, "slot must be non-negative");
   return Number(big % 1000n);

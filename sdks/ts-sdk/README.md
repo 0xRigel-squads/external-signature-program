@@ -22,6 +22,11 @@ TypeScript SDK for constructing byte-compatible instructions and challenges for 
 
 Use it as a deterministic serialization/wrapping layer around your own WebAuthn + transaction flow.
 
+The package now has two entrypoints:
+
+- `external-signature-ts-sdk`: Node-safe instruction builders, challenge helpers, PDA helpers, constants, and shared types.
+- `external-signature-ts-sdk/webauthn`: browser/WebAuthn parsing helpers and related browser-facing types.
+
 ## Installation
 
 ```bash
@@ -50,8 +55,8 @@ import {
   SignerExecutionScheme,
   buildExecuteInstructions,
   createSecp256r1Instruction,
-  parseAuthenticationCredential,
 } from "external-signature-ts-sdk";
+import { parseAuthenticationCredential } from "external-signature-ts-sdk/webauthn";
 
 // Browser-origin credential from navigator.credentials.get(...)
 const credential: PublicKeyCredential = /* ... */;
@@ -89,10 +94,34 @@ const precompileIx = createSecp256r1Instruction({
 
 - `createSecp256r1Instruction` expects a DER signature and converts it internally to compact form.
 - `publicKey` for `createSecp256r1Instruction` must be compressed SEC1 (33 bytes), not SPKI.
+- `createSecp256r1Instruction` validates precompile message length (`<= 65535` bytes).
 - `truncatedSlot` is modulo-1000; use `truncateSlotForValidator(...)`.
 - For wrapped authenticated calls, include the secp256r1 precompile instruction immediately before the program instruction.
+- DER signatures are validated strictly (canonical DER, full payload consumption, `r/s` range checks).
+- `parseClientDataJsonReconstructionParams` accepts only `webauthn.create` or `webauthn.get` and validates `origin` (http/https + valid port).
 
-## Main exports
+## Validation behavior
+
+These checks were tightened as correctness hardening. Wire format and instruction/challenge encoding are unchanged.
+
+- `decodeSpkiP256PublicKey` now validates DER/SPKI structure and requires `id-ecPublicKey` + `prime256v1` and a 65-byte uncompressed EC point.
+- `truncateSlot` and `toLittleEndianU64` reject non-integer numeric inputs (`NaN`, infinities, fractional values) with `ExternalSignatureSdkError`.
+- `parseClientDataJsonReconstructionParams` requires `crossOrigin` to be boolean (when present).
+- `parseClientDataJsonReconstructionParams` only accepts `other_keys_can_be_added_here` when it exactly matches `GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE`.
+- `parseRegistrationCredential` fails fast when `attStmt.sig` is missing/empty.
+
+## Compatibility notes
+
+- **Breaking**:
+  - `Secp256r1InstructionInput.instructionIndex` was removed. The TS SDK only supports the canonical inline precompile payload layout.
+  - Browser/WebAuthn helpers now live under `external-signature-ts-sdk/webauthn` so the root entrypoint remains Node-safe.
+- **Non-breaking**:
+  - `fromBase64Url`/`toBase64Url` now use runtime-safe base64url utilities (Node + browser compatible).
+  - Additional builder input interfaces are exported from the package entrypoint for stronger consumer typing.
+  - Error paths for malformed DER and malformed `clientDataJSON` now fail fast with `ExternalSignatureSdkError`.
+  - `parseRegistrationCredential` falls back to attested credential data when `getPublicKey()` is unavailable and validates it against `getPublicKey()` when both are present.
+
+## Root exports
 
 - `derivePasskeyAccount`
 - `deriveExecutionAccount`
@@ -104,6 +133,16 @@ const precompileIx = createSecp256r1Instruction({
 - `createInitializePasskeyChallenge`
 - `createExecuteInstructionsChallenge`
 - `createRefreshSessionKeyChallenge`
+- `reconstructClientDataJson`
+- `GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE`
+
+## WebAuthn exports
+
 - `parseRegistrationCredential`
 - `parseAuthenticationCredential`
-- `reconstructClientDataJson`
+- `RegistrationWebAuthnData`
+- `decodeSpkiP256PublicKey`
+- `parseClientDataJsonReconstructionParams`
+- `parseDerSignatureToCompact`
+- `toBase64Url`
+- `fromBase64Url`
