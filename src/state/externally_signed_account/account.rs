@@ -111,10 +111,9 @@ impl<'a, T: ExternallySignedAccountData> ExternallySignedAccount<'a, T> {
         // can safely return a mutable reference to the data
         let data_ptr = self.data as *const [u8] as *mut [u8];
         unsafe {
-            Ok(
-                bytemuck::try_from_bytes_mut::<T>(&mut (*data_ptr)[..T::size()])
-                    .map_err(|_| ExternalSignatureProgramError::ErrorDeserializingAccountData)?,
-            )
+            let data = &mut *data_ptr;
+            Ok(bytemuck::try_from_bytes_mut::<T>(&mut data[..T::size()])
+                .map_err(|_| ExternalSignatureProgramError::ErrorDeserializingAccountData)?)
         }
     }
 
@@ -146,7 +145,8 @@ impl<'a, T: ExternallySignedAccountData> ExternallySignedAccount<'a, T> {
         // can safely return a mutable reference to the header
         let data_ptr = self.data as *const [u8] as *mut [u8];
         unsafe {
-            bytemuck::from_bytes_mut::<AccountHeader>(&mut (*data_ptr)[0..AccountHeader::size()])
+            let data = &mut *data_ptr;
+            bytemuck::from_bytes_mut::<AccountHeader>(&mut data[0..AccountHeader::size()])
         }
     }
 

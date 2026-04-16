@@ -1,0 +1,39 @@
+{
+  "name": "external-signature-ts-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for interacting with the External Signature Program",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./webauthn": {
+      "types": "./dist/webauthn.d.ts",
+      "import": "./dist/webauthn.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test tests/**/*.test.mjs"
+  },
+  "dependencies": {
+    "cbor-x": "^1.6.0",
+    "@noble/hashes": "^1.8.0",
+    "@scure/base": "^1.2.6",
+    "@solana/web3.js": "^1.98.4",
+    "buffer": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.3"
+  }
+}

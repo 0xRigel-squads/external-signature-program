@@ -57,3 +57,20 @@ diff.txt
 
 # Cursor files
 .cursor
+
+# Rust targets
+target/
+
+# Node modules
+node_modules/
+*/node_modules/
+
+# Dist & Compiled files
+sdks/ts-sdk/dist/
+sdks/ts-sdk/node_modules/
+examples/minimal-webapp/dist/
+examples/minimal-webapp/node_modules/
+
+# .env files
+.env.local
+.secret/
