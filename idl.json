@@ -1,0 +1,1443 @@
+{
+  "kind": "rootNode",
+  "standard": "codama",
+  "version": "1.6.0",
+  "program": {
+    "kind": "programNode",
+    "name": "externalSignatureProgram",
+    "publicKey": "ExtSgUPtP3JyKUysFw2S5fpL5fWfUPzGUQLd2bTwftXN",
+    "version": "0.1.0",
+    "origin": "native",
+    "docs": [],
+    "accounts": [
+      {
+        "kind": "accountNode",
+        "name": "p256WebauthnAccount",
+        "size": 152,
+        "docs": [],
+        "data": {
+          "kind": "structTypeNode",
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "version",
+              "defaultValueStrategy": "omitted",
+              "docs": [],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "defaultValue": {
+                "kind": "numberValueNode",
+                "number": 1
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "scheme",
+              "defaultValueStrategy": "omitted",
+              "docs": [],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "defaultValue": {
+                "kind": "numberValueNode",
+                "number": 0
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "reserved",
+              "defaultValueStrategy": "omitted",
+              "docs": [],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 2,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              },
+              "defaultValue": {
+                "kind": "numberValueNode",
+                "number": 0
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rpIdLen",
+              "docs": [],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rpId",
+              "docs": [
+                "Relying party ID, padded to 32 bytes"
+              ],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 32,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rpIdHash",
+              "docs": [
+                "SHA-256 hash of the relying party ID"
+              ],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 32,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "publicKeyX",
+              "docs": [
+                "X coordinate of the P256 public key"
+              ],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 32,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "publicKeyYParity",
+              "docs": [
+                "Y parity byte (0x02 or 0x03)"
+              ],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "padding",
+              "defaultValueStrategy": "omitted",
+              "docs": [],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 2,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              },
+              "defaultValue": {
+                "kind": "numberValueNode",
+                "number": 0
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "sessionKeyPublicKey",
+              "docs": [
+                "Ed25519 public key of the session key (zeroed if none)"
+              ],
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "sessionKeyExpiration",
+              "docs": [
+                "Unix timestamp when the session key expires"
+              ],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u64",
+                "endian": "le"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "counter",
+              "docs": [
+                "WebAuthn signature counter for replay protection.",
+                "Must be monotonically increasing."
+              ],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u64",
+                "endian": "le"
+              }
+            }
+          ]
+        },
+        "discriminators": [
+          {
+            "kind": "constantDiscriminatorNode",
+            "offset": 0,
+            "constant": {
+              "kind": "constantValueNode",
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "value": {
+                "kind": "numberValueNode",
+                "number": 1
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "instructions": [
+      {
+        "kind": "instructionNode",
+        "name": "initializeExternalAccount",
+        "docs": [
+          "Initializes a new externally-signed account with WebAuthn/P256 credentials.",
+          "A secp256r1 precompile instruction must precede this instruction in the transaction."
+        ],
+        "optionalAccountStrategy": "omitted",
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "externallySignedAccount",
+            "isWritable": true,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "The PDA to be created, derived from hash of compressed public key."
+            ]
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "rentPayer",
+            "isWritable": true,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": [
+              "The account paying for rent and transaction fees."
+            ]
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "instructionsSysvar",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "Instructions sysvar for precompile signature introspection."
+            ],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "Sysvar1nstructions1111111111111111111111111",
+              "identifier": "splInstructions"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "slotHashesSysvar",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "SlotHashes sysvar for nonce validation."
+            ],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarS1otHashes111111111111111111111111111",
+              "identifier": "splSlotHashes"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "systemProgram",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "System Program for account creation."
+            ],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "11111111111111111111111111111111",
+              "identifier": "systemProgram"
+            }
+          }
+        ],
+        "arguments": [
+          {
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "defaultValueStrategy": "omitted",
+            "docs": [],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u8",
+              "endian": "le"
+            },
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 0
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "slothash",
+            "docs": [
+              "Truncated slot (last 3 digits of slot height, mod 1000).",
+              "Used as nonce — must match a recent slot hash (within 150 slots)."
+            ],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u16",
+              "endian": "le"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "signatureScheme",
+            "docs": [
+              "The signature scheme (currently only P256Webauthn = 0)."
+            ],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "signatureScheme"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "initializationData",
+            "docs": [
+              "Scheme-specific initialization data as SmallVec<u8, u8>.",
+              "For P256Webauthn: borsh-serialized P256RawInitializationData",
+              "(rp_id: SmallVec<u8,u8>, public_key: [u8;33],",
+              " client_data_json_reconstruction_params: ClientDataJsonReconstructionParams)."
+            ],
+            "type": {
+              "kind": "sizePrefixTypeNode",
+              "type": {
+                "kind": "bytesTypeNode"
+              },
+              "prefix": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "sessionKey",
+            "docs": [
+              "Optional session key. If provided, its expiration must not exceed",
+              "3 months from the current Clock timestamp."
+            ],
+            "type": {
+              "kind": "optionTypeNode",
+              "fixed": false,
+              "item": {
+                "kind": "definedTypeLinkNode",
+                "name": "sessionKey"
+              },
+              "prefix": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "constantDiscriminatorNode",
+            "offset": 0,
+            "constant": {
+              "kind": "constantValueNode",
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "value": {
+                "kind": "numberValueNode",
+                "number": 0
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "instructionNode",
+        "name": "executeInstructions",
+        "docs": [
+          "Executes a batch of compiled instructions authenticated by a direct P256 signature.",
+          "A secp256r1 precompile instruction must precede this instruction in the transaction.",
+          "Includes reentrancy protection (cannot CPI back to this program)."
+        ],
+        "optionalAccountStrategy": "omitted",
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "externallySignedAccount",
+            "isWritable": true,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "The externally-signed PDA that authorizes the instructions."
+            ]
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "instructionsSysvar",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "Instructions sysvar for precompile signature verification."
+            ],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "Sysvar1nstructions1111111111111111111111111",
+              "identifier": "splInstructions"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "slotHashesSysvar",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "SlotHashes sysvar for nonce validation."
+            ],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarS1otHashes111111111111111111111111111",
+              "identifier": "splSlotHashes"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "nonceSigner",
+            "isWritable": false,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": [
+              "The signer providing the nonce signature for replay protection."
+            ]
+          }
+        ],
+        "arguments": [
+          {
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "defaultValueStrategy": "omitted",
+            "docs": [],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u8",
+              "endian": "le"
+            },
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 1
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "signatureScheme",
+            "docs": [],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "signatureScheme"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "signerExecutionScheme",
+            "docs": [
+              "Determines which account signs CPI calls:",
+              "ExecutionAccount (0) = derived PDA, ExternalAccount (1) = the ESA itself."
+            ],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "signerExecutionScheme"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "slothash",
+            "docs": [
+              "Truncated slot for nonce validation (mod 1000)."
+            ],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u16",
+              "endian": "le"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "extraVerificationData",
+            "docs": [
+              "Scheme-specific verification data as SmallVec<u8, u8>.",
+              "For P256Webauthn: borsh-serialized P256RawVerificationData",
+              "(public_key: [u8;33], client_data_json_reconstruction_params)."
+            ],
+            "type": {
+              "kind": "sizePrefixTypeNode",
+              "type": {
+                "kind": "bytesTypeNode"
+              },
+              "prefix": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "instructions",
+            "docs": [
+              "SmallVec<u8, CompiledInstruction> — compiled instructions to execute via CPI.",
+              "Account indices reference the remaining accounts."
+            ],
+            "type": {
+              "kind": "arrayTypeNode",
+              "item": {
+                "kind": "definedTypeLinkNode",
+                "name": "compiledInstruction"
+              },
+              "count": {
+                "kind": "prefixedCountNode",
+                "prefix": {
+                  "kind": "numberTypeNode",
+                  "format": "u8",
+                  "endian": "le"
+                }
+              }
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "kind": "instructionRemainingAccountsNode",
+            "docs": [],
+            "value": {
+              "isOptional": false,
+              "isSigner": false,
+              "isWritable": false,
+              "docs": [
+                "Accounts referenced by the compiled instructions.",
+                "The execution account (derived PDA or ESA itself, based on",
+                "signerExecutionScheme) should be included here when needed."
+              ]
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "constantDiscriminatorNode",
+            "offset": 0,
+            "constant": {
+              "kind": "constantValueNode",
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "value": {
+                "kind": "numberValueNode",
+                "number": 1
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "instructionNode",
+        "name": "refreshSessionKey",
+        "docs": [
+          "Refreshes the session key on an externally-signed account.",
+          "Requires a fresh P256 signature. The new expiration is calculated as",
+          "Clock::unix_timestamp + session_key.expiration (treated as a duration)."
+        ],
+        "optionalAccountStrategy": "omitted",
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "externallySignedAccount",
+            "isWritable": true,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "The externally-signed PDA whose session key is being refreshed."
+            ]
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "instructionsSysvar",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "Sysvar1nstructions1111111111111111111111111",
+              "identifier": "splInstructions"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "slotHashesSysvar",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarS1otHashes111111111111111111111111111",
+              "identifier": "splSlotHashes"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "nonceSigner",
+            "isWritable": false,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": [
+              "The signer providing the nonce signature."
+            ]
+          }
+        ],
+        "arguments": [
+          {
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "defaultValueStrategy": "omitted",
+            "docs": [],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u8",
+              "endian": "le"
+            },
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 2
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "slothash",
+            "docs": [
+              "Truncated slot for nonce validation (mod 1000)."
+            ],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u16",
+              "endian": "le"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "signatureScheme",
+            "docs": [],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "signatureScheme"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "verificationData",
+            "docs": [
+              "Scheme-specific verification data as SmallVec<u8, u8>.",
+              "For P256Webauthn: borsh-serialized P256RawVerificationData."
+            ],
+            "type": {
+              "kind": "sizePrefixTypeNode",
+              "type": {
+                "kind": "bytesTypeNode"
+              },
+              "prefix": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "sessionKey",
+            "docs": [
+              "The new session key. The expiration field is treated as a",
+              "duration (seconds) — the program adds it to Clock::unix_timestamp."
+            ],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "sessionKey"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "constantDiscriminatorNode",
+            "offset": 0,
+            "constant": {
+              "kind": "constantValueNode",
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "value": {
+                "kind": "numberValueNode",
+                "number": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "instructionNode",
+        "name": "executeInstructionsSessioned",
+        "docs": [
+          "Executes compiled instructions using an active session key.",
+          "No precompile signature required — the session key signer authorizes execution.",
+          "Validates session key against the account and checks expiration.",
+          "Includes reentrancy protection."
+        ],
+        "optionalAccountStrategy": "omitted",
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "externallySignedAccount",
+            "isWritable": true,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [
+              "The externally-signed PDA that authorizes the instructions."
+            ]
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "sessionSigner",
+            "isWritable": false,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": [
+              "The session key signer — must match the key stored on the account."
+            ]
+          }
+        ],
+        "arguments": [
+          {
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "defaultValueStrategy": "omitted",
+            "docs": [],
+            "type": {
+              "kind": "numberTypeNode",
+              "format": "u8",
+              "endian": "le"
+            },
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 3
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "signatureScheme",
+            "docs": [],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "signatureScheme"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "signerExecutionScheme",
+            "docs": [
+              "ExecutionAccount (0) = derived PDA signs,",
+              "ExternalAccount (1) = ESA itself signs."
+            ],
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "signerExecutionScheme"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "instructions",
+            "docs": [
+              "SmallVec<u8, CompiledInstruction> — compiled instructions to execute."
+            ],
+            "type": {
+              "kind": "arrayTypeNode",
+              "item": {
+                "kind": "definedTypeLinkNode",
+                "name": "compiledInstruction"
+              },
+              "count": {
+                "kind": "prefixedCountNode",
+                "prefix": {
+                  "kind": "numberTypeNode",
+                  "format": "u8",
+                  "endian": "le"
+                }
+              }
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "kind": "instructionRemainingAccountsNode",
+            "docs": [],
+            "value": {
+              "isOptional": false,
+              "isSigner": false,
+              "isWritable": false,
+              "docs": [
+                "Accounts referenced by the compiled instructions."
+              ]
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "constantDiscriminatorNode",
+            "offset": 0,
+            "constant": {
+              "kind": "constantValueNode",
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              },
+              "value": {
+                "kind": "numberValueNode",
+                "number": 3
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "definedTypes": [
+      {
+        "kind": "definedTypeNode",
+        "name": "signatureScheme",
+        "docs": [
+          "The signature verification scheme.",
+          "Currently only P256Webauthn (0) is supported."
+        ],
+        "type": {
+          "kind": "enumTypeNode",
+          "variants": [
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "p256Webauthn"
+            }
+          ],
+          "size": {
+            "kind": "numberTypeNode",
+            "format": "u8",
+            "endian": "le"
+          }
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "signerExecutionScheme",
+        "docs": [
+          "Determines which account signs CPI calls.",
+          "ExecutionAccount: a derived PDA (ESA key + 'execution_account').",
+          "ExternalAccount: the externally-signed account itself."
+        ],
+        "type": {
+          "kind": "enumTypeNode",
+          "variants": [
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "executionAccount"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "externalAccount"
+            }
+          ],
+          "size": {
+            "kind": "numberTypeNode",
+            "format": "u8",
+            "endian": "le"
+          }
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "sessionKey",
+        "docs": [
+          "An ephemeral session key with an expiration."
+        ],
+        "type": {
+          "kind": "structTypeNode",
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "key",
+              "docs": [
+                "Ed25519 public key of the session key."
+              ],
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "expiration",
+              "docs": [
+                "For initialization/refresh: duration in seconds to add to current timestamp.",
+                "On-chain: absolute unix timestamp of expiration.",
+                "Max 3 months (7,776,000 seconds) from current time."
+              ],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u64",
+                "endian": "le"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "compiledInstruction",
+        "docs": [
+          "A compiled instruction that references accounts by index into the",
+          "remaining accounts array. Uses SmallVec (u8/u16 length prefixes)."
+        ],
+        "type": {
+          "kind": "structTypeNode",
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "programIdIndex",
+              "docs": [
+                "Index into the remaining accounts for the program to invoke."
+              ],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "accountsIndices",
+              "docs": [
+                "SmallVec<u8, u8> — indices into remaining accounts for this instruction."
+              ],
+              "type": {
+                "kind": "arrayTypeNode",
+                "item": {
+                  "kind": "numberTypeNode",
+                  "format": "u8",
+                  "endian": "le"
+                },
+                "count": {
+                  "kind": "prefixedCountNode",
+                  "prefix": {
+                    "kind": "numberTypeNode",
+                    "format": "u8",
+                    "endian": "le"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "data",
+              "docs": [
+                "SmallVec<u16, u8> — the instruction data (u16 length prefix)."
+              ],
+              "type": {
+                "kind": "arrayTypeNode",
+                "item": {
+                  "kind": "numberTypeNode",
+                  "format": "u8",
+                  "endian": "le"
+                },
+                "count": {
+                  "kind": "prefixedCountNode",
+                  "prefix": {
+                    "kind": "numberTypeNode",
+                    "format": "u16",
+                    "endian": "le"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "clientDataJsonReconstructionParams",
+        "docs": [
+          "Minimal representation for reconstructing the WebAuthn clientDataJSON.",
+          "Used in both initialization and verification data."
+        ],
+        "type": {
+          "kind": "structTypeNode",
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "typeAndFlags",
+              "docs": [
+                "Packed byte: high nibble = auth type (0x00=create, 0x10=get),",
+                "low nibble = flags (0x01=crossOrigin, 0x02=http, 0x04=googleExtra)."
+              ],
+              "type": {
+                "kind": "numberTypeNode",
+                "format": "u8",
+                "endian": "le"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "port",
+              "docs": [
+                "Optional port number for the origin URL."
+              ],
+              "type": {
+                "kind": "optionTypeNode",
+                "fixed": false,
+                "item": {
+                  "kind": "numberTypeNode",
+                  "format": "u16",
+                  "endian": "le"
+                },
+                "prefix": {
+                  "kind": "numberTypeNode",
+                  "format": "u8",
+                  "endian": "le"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "p256RawInitializationData",
+        "docs": [
+          "P256 WebAuthn initialization data.",
+          "Borsh-serialized inside the initializationData SmallVec bytes."
+        ],
+        "type": {
+          "kind": "structTypeNode",
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rpId",
+              "docs": [
+                "SmallVec<u8, u8> — relying party ID (max 32 bytes, no quote chars)."
+              ],
+              "type": {
+                "kind": "arrayTypeNode",
+                "item": {
+                  "kind": "numberTypeNode",
+                  "format": "u8",
+                  "endian": "le"
+                },
+                "count": {
+                  "kind": "prefixedCountNode",
+                  "prefix": {
+                    "kind": "numberTypeNode",
+                    "format": "u8",
+                    "endian": "le"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "publicKey",
+              "docs": [
+                "Compressed P256 public key: [y_parity(1) | x(32)]."
+              ],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 33,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "clientDataJsonReconstructionParams",
+              "docs": [],
+              "type": {
+                "kind": "definedTypeLinkNode",
+                "name": "clientDataJsonReconstructionParams"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "p256RawVerificationData",
+        "docs": [
+          "P256 WebAuthn verification data.",
+          "Borsh-serialized inside the extraVerificationData / verificationData SmallVec bytes."
+        ],
+        "type": {
+          "kind": "structTypeNode",
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "publicKey",
+              "docs": [
+                "Compressed P256 public key: [y_parity(1) | x(32)]."
+              ],
+              "type": {
+                "kind": "fixedSizeTypeNode",
+                "size": 33,
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "clientDataJsonReconstructionParams",
+              "docs": [],
+              "type": {
+                "kind": "definedTypeLinkNode",
+                "name": "clientDataJsonReconstructionParams"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "pdas": [
+      {
+        "kind": "pdaNode",
+        "name": "externallySignedAccount",
+        "docs": [],
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": {
+              "kind": "stringTypeNode",
+              "encoding": "utf8"
+            },
+            "value": {
+              "kind": "stringValueNode",
+              "string": "passkey"
+            }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "hashedPublicKey",
+            "docs": [
+              "SHA-256 hash of the compressed P256 public key (33 bytes -> 32 bytes).",
+              "Hash is required because PDA seeds are limited to 32 bytes each."
+            ],
+            "type": {
+              "kind": "fixedSizeTypeNode",
+              "size": 32,
+              "type": {
+                "kind": "bytesTypeNode"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "pdaNode",
+        "name": "executionAccount",
+        "docs": [],
+        "seeds": [
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "externallySignedAccountKey",
+            "docs": [
+              "The public key of the parent externally-signed account."
+            ],
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          },
+          {
+            "kind": "constantPdaSeedNode",
+            "type": {
+              "kind": "stringTypeNode",
+              "encoding": "utf8"
+            },
+            "value": {
+              "kind": "stringValueNode",
+              "string": "execution_account"
+            }
+          }
+        ]
+      }
+    ],
+    "events": [],
+    "errors": [
+      {
+        "kind": "errorNode",
+        "name": "invalidSlothashIndex",
+        "code": 0,
+        "message": "Invalid slothash index",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidTruncatedSlot",
+        "code": 1,
+        "message": "Invalid truncated slot",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "expiredSlothash",
+        "code": 2,
+        "message": "Expired slothash",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "missingNonceSignature",
+        "code": 3,
+        "message": "Missing nonce signature",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "cpiNotAllowed",
+        "code": 4,
+        "message": "CPI not allowed",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidInstructionSysvarAccount",
+        "code": 5,
+        "message": "Invalid instruction sysvar account",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidPrecompileId",
+        "code": 6,
+        "message": "Invalid precompile id",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidNumPrecompileSignatures",
+        "code": 7,
+        "message": "Invalid number of precompile signatures",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidSignatureIndex",
+        "code": 8,
+        "message": "Invalid signature index",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidSignatureOffset",
+        "code": 9,
+        "message": "Invalid signature offset",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "errorInitializingHeader",
+        "code": 10,
+        "message": "Error initializing header",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "errorDeserializingHeader",
+        "code": 11,
+        "message": "Error deserializing header",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "errorInitializingAccountData",
+        "code": 12,
+        "message": "Error initializing account data",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "errorDeserializingAccountData",
+        "code": 13,
+        "message": "Error deserializing account data",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidExtraVerificationDataArgs",
+        "code": 14,
+        "message": "Invalid extra verification data args",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidExecutionArgs",
+        "code": 15,
+        "message": "Invalid execution args",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "sessionSignerNotASigner",
+        "code": 16,
+        "message": "Session signer is not a signer",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidSessionKey",
+        "code": 17,
+        "message": "Invalid session key",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "sessionKeyExpired",
+        "code": 18,
+        "message": "Session key expired",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidSessionKeyExpiration",
+        "code": 19,
+        "message": "Invalid session key expiration",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidSignatureScheme",
+        "code": 20,
+        "message": "Invalid signature scheme",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "invalidSignerExecutionScheme",
+        "code": 21,
+        "message": "Invalid signer execution scheme",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "signerExecutionAccountNotASigner",
+        "code": 22,
+        "message": "Signer execution account is not a signer",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256RelyingPartTooLong",
+        "code": 23,
+        "message": "Relying party ID too long. Max length is 32 bytes",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256RelyingPartIncludeQuotes",
+        "code": 24,
+        "message": "Relying party does not get to include quotes",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256RelyingPartyMismatch",
+        "code": 25,
+        "message": "Relying party mismatch",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256ClientDataHashMismatch",
+        "code": 26,
+        "message": "Client data hash mismatch",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256AccountNotWritable",
+        "code": 27,
+        "message": "Account is not writable",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256InvalidAlgorithm",
+        "code": 28,
+        "message": "Invalid passkey Algorithm",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256InvalidPublicKeyEncoding",
+        "code": 29,
+        "message": "Invalid public key encoding",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256PublicKeyMismatch",
+        "code": 30,
+        "message": "Public key mismatch",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256UserNotVerified",
+        "code": 31,
+        "message": "User not verified",
+        "docs": []
+      },
+      {
+        "kind": "errorNode",
+        "name": "p256UserNotPresent",
+        "code": 32,
+        "message": "User not present",
+        "docs": []
+      }
+    ]
+  },
+  "additionalPrograms": []
+}
