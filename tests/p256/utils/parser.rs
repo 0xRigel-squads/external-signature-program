@@ -64,6 +64,10 @@ pub fn parse_webauthn_fixture(json_data: &str) -> Result<WebAuthnData, Box<dyn s
     let cross_origin = client_data_json_decoded_json["crossOrigin"]
         .as_bool()
         .unwrap_or(false);
+    let has_cross_origin = client_data_json_decoded_json
+        .as_object()
+        .map(|object| object.contains_key("crossOrigin"))
+        .unwrap_or(false);
     let is_http = client_data_json_decoded_json["origin"]
         .as_str()
         .unwrap()
@@ -84,13 +88,15 @@ pub fn parse_webauthn_fixture(json_data: &str) -> Result<WebAuthnData, Box<dyn s
                 .and_then(|port_str| port_str.parse::<u16>().ok())
         });
 
-    let client_data_reconstruction_params = ClientDataJsonReconstructionParams::new(
-        auth_type,
-        cross_origin,
-        is_http,
-        has_google_extra,
-        port,
-    );
+    let client_data_reconstruction_params =
+        ClientDataJsonReconstructionParams::new_with_optional_cross_origin(
+            auth_type,
+            cross_origin,
+            has_cross_origin,
+            is_http,
+            has_google_extra,
+            port,
+        );
     // Return the extracted data
     Ok(WebAuthnData {
         signature,

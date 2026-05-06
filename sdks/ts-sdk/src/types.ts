@@ -33,6 +33,7 @@ export interface ClientDataJsonReconstructionParams {
 export interface CreateClientDataJsonReconstructionParamsInput {
   authType: AuthType;
   crossOrigin: boolean;
+  includeCrossOrigin?: boolean;
   isHttp: boolean;
   hasGoogleExtra: boolean;
   port?: number | null;
