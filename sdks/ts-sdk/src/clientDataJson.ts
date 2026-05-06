@@ -11,6 +11,7 @@ const TYPE_GET = 0x10;
 const FLAG_CROSS_ORIGIN = 0x01;
 const FLAG_HTTP_ORIGIN = 0x02;
 const FLAG_GOOGLE_EXTRA = 0x04;
+const FLAG_OMIT_CROSS_ORIGIN = 0x08;
 export const GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE =
   "do not compare clientDataJSON against a template. See https://goo.gl/yabPex";
 
@@ -22,6 +23,7 @@ export function createClientDataJsonReconstructionParams(
   if (input.crossOrigin) typeAndFlags |= FLAG_CROSS_ORIGIN;
   if (input.isHttp) typeAndFlags |= FLAG_HTTP_ORIGIN;
   if (input.hasGoogleExtra) typeAndFlags |= FLAG_GOOGLE_EXTRA;
+  if (input.includeCrossOrigin === false) typeAndFlags |= FLAG_OMIT_CROSS_ORIGIN;
   return {
     typeAndFlags,
     port: input.port ?? null,
@@ -48,6 +50,7 @@ export function reconstructClientDataJson(
   const origin =
     params.port == null ? `${protocol}${rpId}` : `${protocol}${rpId}:${params.port}`;
   const crossOrigin = (params.typeAndFlags & FLAG_CROSS_ORIGIN) !== 0 ? "true" : "false";
+  const includeCrossOrigin = (params.typeAndFlags & FLAG_OMIT_CROSS_ORIGIN) === 0;
 
   const base = [
     "{\"type\":\"",
@@ -56,8 +59,8 @@ export function reconstructClientDataJson(
     challengeBase64Url,
     "\",\"origin\":\"",
     origin,
-    "\",\"crossOrigin\":",
-    crossOrigin,
+    "\"",
+    ...(includeCrossOrigin ? [",\"crossOrigin\":", crossOrigin] : []),
   ];
 
   const googleExtra =

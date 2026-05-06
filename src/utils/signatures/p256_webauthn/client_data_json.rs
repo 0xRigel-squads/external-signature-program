@@ -20,11 +20,32 @@ impl ClientDataJsonReconstructionParams {
     const FLAG_CROSS_ORIGIN: u8 = 0x01;
     const FLAG_HTTP_ORIGIN: u8 = 0x02; // If not set, assume https://
     const FLAG_GOOGLE_EXTRA: u8 = 0x04; // Extra field that chrome uses to make sure the clientDataJson is not compared to a template
+    const FLAG_OMIT_CROSS_ORIGIN: u8 = 0x08;
 
     /// Used to create the params (mostly for client side)
     pub fn new(
         auth_type: AuthType,
         cross_origin: bool,
+        is_http: bool,
+        has_google_extra: bool,
+        port: Option<u16>,
+    ) -> Self {
+        Self::new_with_optional_cross_origin(
+            auth_type,
+            cross_origin,
+            true,
+            is_http,
+            has_google_extra,
+            port,
+        )
+    }
+
+    /// Used when parsing browser-provided clientDataJSON, where field presence
+    /// matters for byte-for-byte reconstruction.
+    pub fn new_with_optional_cross_origin(
+        auth_type: AuthType,
+        cross_origin: bool,
+        has_cross_origin: bool,
         is_http: bool,
         has_google_extra: bool,
         port: Option<u16>,
@@ -42,6 +63,9 @@ impl ClientDataJsonReconstructionParams {
         }
         if has_google_extra {
             value |= Self::FLAG_GOOGLE_EXTRA;
+        }
+        if !has_cross_origin {
+            value |= Self::FLAG_OMIT_CROSS_ORIGIN;
         }
 
         Self {
@@ -72,6 +96,11 @@ impl ClientDataJsonReconstructionParams {
     /// Checks if the google extra field is set
     pub fn has_google_extra(&self) -> bool {
         self.type_and_flags & Self::FLAG_GOOGLE_EXTRA != 0
+    }
+
+    /// Checks if the crossOrigin field should be omitted.
+    pub fn omits_cross_origin(&self) -> bool {
+        self.type_and_flags & Self::FLAG_OMIT_CROSS_ORIGIN != 0
     }
 }
 
@@ -115,13 +144,6 @@ pub fn reconstruct_client_data_json(
     } else {
         format!("{}{}", prefix, std::str::from_utf8(rp_id).unwrap())
     };
-    // Create the cross origin string
-    let cross_origin = if params.is_cross_origin() {
-        "true"
-    } else {
-        "false"
-    };
-
     let mut json_bytes: Vec<u8> = Vec::with_capacity(256);
     json_bytes.extend_from_slice(b"{\"type\":\"");
     json_bytes.extend_from_slice(type_str.as_bytes());
@@ -129,8 +151,17 @@ pub fn reconstruct_client_data_json(
     json_bytes.extend_from_slice(challenge_b64url.as_bytes());
     json_bytes.extend_from_slice(b"\",\"origin\":\"");
     json_bytes.extend_from_slice(origin.as_bytes());
-    json_bytes.extend_from_slice(b"\",\"crossOrigin\":");
-    json_bytes.extend_from_slice(cross_origin.as_bytes());
+    json_bytes.extend_from_slice(b"\"");
+
+    if !params.omits_cross_origin() {
+        let cross_origin = if params.is_cross_origin() {
+            "true"
+        } else {
+            "false"
+        };
+        json_bytes.extend_from_slice(b",\"crossOrigin\":");
+        json_bytes.extend_from_slice(cross_origin.as_bytes());
+    }
 
     // Add Google's extra field if needed
     // Google note: One should not compare an unparsed clientDataJSON against a
@@ -234,6 +265,31 @@ mod tests {
             .unwrap();
 
         // Assert that the result matches the expected bytes
+        assert_eq!(result, expected_bytes);
+    }
+
+    #[test]
+    fn test_reconstruct_client_data_json_without_cross_origin() {
+        let params = ClientDataJsonReconstructionParams::new_with_optional_cross_origin(
+            AuthType::Create,
+            false,
+            false,
+            false,
+            false,
+            None,
+        );
+        let rp_id = "www.passkeys-debugger.io";
+        let challenge = general_purpose::URL_SAFE_NO_PAD
+            .decode("E7yasyYuzqwbUamcXXqz8PNJkZzJHYiZ8SWAkj37tco")
+            .unwrap();
+
+        let result = reconstruct_client_data_json(&params, rp_id.as_bytes(), &challenge);
+
+        let expected_base64 = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiRTd5YXN5WXV6cXdiVWFtY1hYcXo4UE5Ka1p6SkhZaVo4U1dBa2ozN3RjbyIsIm9yaWdpbiI6Imh0dHBzOi8vd3d3LnBhc3NrZXlzLWRlYnVnZ2VyLmlvIn0";
+        let expected_bytes = general_purpose::URL_SAFE_NO_PAD
+            .decode(expected_base64)
+            .unwrap();
+
         assert_eq!(result, expected_bytes);
     }
 }

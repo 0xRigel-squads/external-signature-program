@@ -269,6 +269,7 @@ export function parseClientDataJsonReconstructionParams(
     return createClientDataJsonReconstructionParams({
       authType: json.type === "webauthn.create" ? AuthType.Create : AuthType.Get,
       crossOrigin: json.crossOrigin ?? false,
+      includeCrossOrigin: Object.prototype.hasOwnProperty.call(json, "crossOrigin"),
       isHttp: url.protocol === "http:",
       hasGoogleExtra: typeof json.other_keys_can_be_added_here === "string",
       port,

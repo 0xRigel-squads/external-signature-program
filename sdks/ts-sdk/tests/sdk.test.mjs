@@ -14,6 +14,7 @@ import {
   createExecuteInstructionsChallenge,
   createInitializePasskeyChallenge,
   createSecp256r1Instruction,
+  reconstructClientDataJson,
   truncateSlot,
 } from "../dist/index.js";
 import { toLittleEndianU64 } from "../dist/bytes.js";
@@ -255,14 +256,33 @@ test("parseClientDataJsonReconstructionParams validates type and origin", () => 
       other_keys_can_be_added_here: GOOGLE_CLIENT_DATA_JSON_EXTRA_VALUE,
     }),
   );
+  const rawChallenge = Uint8Array.from("x", (char) => char.charCodeAt(0));
+  const encodedChallenge = "eA";
+  const withoutCrossOrigin = textEncoder.encode(
+    JSON.stringify({
+      type: "webauthn.create",
+      challenge: encodedChallenge,
+      origin: "https://example.com",
+    }),
+  );
 
   const createParams = parseClientDataJsonReconstructionParams(validCreate);
   const getParams = parseClientDataJsonReconstructionParams(validGet);
+  const withoutCrossOriginParams = parseClientDataJsonReconstructionParams(withoutCrossOrigin);
 
   assert.equal(createParams.typeAndFlags, 0x00);
   assert.equal(createParams.port, null);
   assert.equal(getParams.typeAndFlags, 0x17);
   assert.equal(getParams.port, 8080);
+  assert.equal(withoutCrossOriginParams.typeAndFlags, 0x08);
+  assert.deepEqual(
+    reconstructClientDataJson(
+      withoutCrossOriginParams,
+      "example.com",
+      rawChallenge,
+    ),
+    withoutCrossOrigin,
+  );
 
   const unknownType = textEncoder.encode(
     JSON.stringify({
