@@ -61,8 +61,7 @@ pub struct NonceData<'a> {
 /// 149 slots and Solana's current roughly 1% skip rate, only a small number of
 /// entries are normally missing. SBF benchmarks showed that linear search is
 /// cheaper than binary search under those conditions, while remaining bounded
-/// to this 150-slot validity window. See
-/// `docs/skipped_slot_search_evaluation.md` for the measurements.
+/// to this 150-slot validity window.
 #[inline(always)]
 fn reverse_linear_search_slot_hash<'slot_hashes, T>(
     slothashes_sysvar: &'slot_hashes SlotHashes<T>,
