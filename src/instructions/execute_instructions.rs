@@ -1,7 +1,8 @@
 use crate::{
     state::{ExecutionAccount, ExternallySignedAccount, SignatureScheme, SignerExecutionScheme},
     utils::{
-        create_instruction_execution_account_metas, hash, validate_nonce, CompiledInstruction, NonceData, SlotHashes, TruncatedSlot
+        create_instruction_execution_account_metas, hash, validate_nonce, CompiledInstruction,
+        NonceData, SlotHashes, TruncatedSlot,
     },
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -28,6 +29,15 @@ pub struct ExecutableInstructionArgs {
     pub slothash: TruncatedSlot,
     pub extra_verification_data: SmallVec<u8, u8>,
     pub instructions: SmallVec<u8, CompiledInstruction>,
+}
+
+#[inline(never)]
+fn parse_executable_instruction_args(
+    data: &[u8],
+) -> Result<Box<ExecutableInstructionArgs>, ProgramError> {
+    ExecutableInstructionArgs::try_from_slice(data)
+        .map(Box::new)
+        .map_err(|_| ExternalSignatureProgramError::InvalidExecutionArgs.into())
 }
 
 // Sanitized and checked accounts for execution
@@ -151,41 +161,16 @@ impl<'a, T: ExternallySignedAccountData> ExecuteInstructionsContext<'a, T> {
     }
 }
 
-// Processes the execute instructions instruction
-pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
-    // Parse the execution args
-    let args = ExecutableInstructionArgs::try_from_slice(data)
-        .map_err(|_| ExternalSignatureProgramError::InvalidExecutionArgs)?;
-    // Parse the signature scheme
-    let signature_scheme = SignatureScheme::try_from_primitive(args.signature_scheme)
-        .map_err(|_| ExternalSignatureProgramError::InvalidSignatureScheme)?;
-
-    // Load the execution context based on the signature scheme
-    let mut execution_context = match signature_scheme {
-        SignatureScheme::P256Webauthn => {
-            ExecuteInstructionsContext::<P256WebauthnAccountData>::load(accounts, &args)?
-        }
-    };
-
-    // Get the instruction execution payload hash
-    let instruction_execution_hash = execution_context.get_instruction_payload_hash();
-
-    // Verify the instruction payload
-    execution_context
-        .accounts
-        .externally_signed_account
-        .verify_payload(
-            &execution_context.accounts.instructions_sysvar,
-            &execution_context.signature_scheme_specific_verification_data,
-            &instruction_execution_hash,
-        )?;
-
-    // Initialize containers for both data structures
+#[inline(never)]
+fn invoke_compiled_instructions<T: ExternallySignedAccountData>(
+    execution_context: &ExecuteInstructionsContext<'_, T>,
+) -> ProgramResult {
     let mut account_metas = Vec::with_capacity(256);
     let mut account_info_indices = Vec::with_capacity(64);
 
-    for instruction in args.instructions.iter() {
-        let mut seen_indices = [false; 64]; // A maximum of 64 account infos are allowed by the runtime
+    for instruction in execution_context.instructions.iter() {
+        // A maximum of 64 account infos are allowed by the runtime.
+        let mut seen_indices = 0u64;
 
         // Build AccountMeta vector and collect unique indices in one pass
         for &index in instruction.accounts_indices.iter() {
@@ -193,8 +178,9 @@ pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> Pr
                 execution_context.instruction_execution_account_metas[index as usize].clone(),
             );
             // Track unique indices for AccountInfo references
-            if !seen_indices[index as usize] {
-                seen_indices[index as usize] = true;
+            let index_mask = 1u64 << index;
+            if seen_indices & index_mask == 0 {
+                seen_indices |= index_mask;
                 account_info_indices.push(index);
             }
         }
@@ -233,4 +219,35 @@ pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> Pr
         account_info_indices.clear();
     }
     Ok(())
+}
+
+// Processes the execute instructions instruction
+pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
+    // Parse the execution args
+    let args = parse_executable_instruction_args(data)?;
+    // Parse the signature scheme
+    let signature_scheme = SignatureScheme::try_from_primitive(args.signature_scheme)
+        .map_err(|_| ExternalSignatureProgramError::InvalidSignatureScheme)?;
+
+    // Load the execution context based on the signature scheme
+    let mut execution_context = match signature_scheme {
+        SignatureScheme::P256Webauthn => {
+            ExecuteInstructionsContext::<P256WebauthnAccountData>::load(accounts, &args)?
+        }
+    };
+
+    // Get the instruction execution payload hash
+    let instruction_execution_hash = execution_context.get_instruction_payload_hash();
+
+    // Verify the instruction payload
+    execution_context
+        .accounts
+        .externally_signed_account
+        .verify_payload(
+            &execution_context.accounts.instructions_sysvar,
+            &execution_context.signature_scheme_specific_verification_data,
+            &instruction_execution_hash,
+        )?;
+
+    invoke_compiled_instructions(&execution_context)
 }
