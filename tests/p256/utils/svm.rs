@@ -117,6 +117,45 @@ pub fn set_slothash_sysvar(svm: &mut LiteSVM) {
     svm.set_sysvar(&SlotHashes::new(&slothashes));
 }
 
+pub fn set_slothash_sysvar_with_skips(
+    svm: &mut LiteSVM,
+    signed_slot_index: usize,
+    distance: u64,
+    skipped_slots: u64,
+) {
+    assert!(distance < 150);
+    assert!(skipped_slots < distance);
+
+    let current_slothashes = svm.get_sysvar::<SlotHashes>();
+    let signed_slot = current_slothashes[signed_slot_index];
+    let newest_height = signed_slot.0 + distance;
+    let first_retained_height = signed_slot.0 + skipped_slots + 1;
+    let mut slothashes = Vec::with_capacity(512);
+
+    for height in (signed_slot.0..=newest_height).rev() {
+        if height > signed_slot.0 && height < first_retained_height {
+            continue;
+        }
+
+        let hash = if height == signed_slot.0 {
+            signed_slot.1
+        } else {
+            let hash_bytes: [u8; 32] = Sha256::digest(height.to_le_bytes()).into();
+            Hash::from(hash_bytes)
+        };
+        slothashes.push((height, hash));
+    }
+
+    let mut older_height = signed_slot.0;
+    while slothashes.len() < 512 && older_height > 0 {
+        older_height -= 1;
+        let hash_bytes: [u8; 32] = Sha256::digest(older_height.to_le_bytes()).into();
+        slothashes.push((older_height, Hash::from(hash_bytes)));
+    }
+
+    svm.set_sysvar(&SlotHashes::new(&slothashes));
+}
+
 pub fn get_valid_slothash(svm: &LiteSVM) -> ([u8; 32], TruncatedSlot) {
     let slothashes = svm.get_sysvar::<SlotHashes>();
     // Meaning of life

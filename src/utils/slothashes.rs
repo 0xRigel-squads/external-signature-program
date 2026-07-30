@@ -69,7 +69,7 @@ where
     /// Returns the slot hash at the specified index.
     #[inline(always)]
     pub fn get_slot_hash(&self, index: usize) -> Result<&SlotHash, ProgramError> {
-        if index > self.get_slothashes_len() as usize {
+        if index >= self.get_slothashes_len() as usize {
             return Err(ExternalSignatureProgramError::InvalidSlothashIndex.into());
         }
         unsafe { Ok(self.get_slot_hash_unchecked(index)) }
