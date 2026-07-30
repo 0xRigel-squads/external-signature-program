@@ -1,4 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use core::ops::Deref;
 use pinocchio::{
     account_info::{AccountInfo, Ref},
     program_error::ProgramError,
@@ -7,7 +8,7 @@ use pinocchio::{
 
 use crate::{
     errors::ExternalSignatureProgramError,
-    utils::{get_stack_height, SlotHashes},
+    utils::{get_stack_height, SlotHash, SlotHashes},
 };
 
 #[derive(BorshDeserialize, BorshSerialize, Clone)]
@@ -53,6 +54,59 @@ pub struct NonceData<'a> {
     pub slothash: [u8; 32],
 }
 
+/// Searches only toward newer SlotHashes entries after the direct numeric-slot
+/// index misses.
+///
+/// Reverse linear search is intentional here. With a maximum valid distance of
+/// 149 slots and Solana's current roughly 1% skip rate, only a small number of
+/// entries are normally missing. SBF benchmarks showed that linear search is
+/// cheaper than binary search under those conditions, while remaining bounded
+/// to this 150-slot validity window.
+#[inline(always)]
+fn reverse_linear_search_slot_hash<'slot_hashes, T>(
+    slothashes_sysvar: &'slot_hashes SlotHashes<T>,
+    expected_slot: u64,
+    search_end: usize,
+) -> Result<&'slot_hashes SlotHash, ProgramError>
+where
+    T: Deref<Target = [u8]>,
+{
+    for index in (0..search_end).rev() {
+        let candidate = slothashes_sysvar.get_slot_hash(index)?;
+        if candidate.height == expected_slot {
+            return Ok(candidate);
+        }
+    }
+
+    Err(ExternalSignatureProgramError::InvalidSlothashIndex.into())
+}
+
+#[inline(always)]
+fn find_slot_hash_with_fallback<'slot_hashes, T>(
+    slothashes_sysvar: &'slot_hashes SlotHashes<T>,
+    expected_slot: u64,
+    expected_index: usize,
+) -> Result<&'slot_hashes SlotHash, ProgramError>
+where
+    T: Deref<Target = [u8]>,
+{
+    let slothashes_len = slothashes_sysvar.get_slothashes_len() as usize;
+
+    if expected_index < slothashes_len {
+        let candidate = slothashes_sysvar.get_slot_hash(expected_index)?;
+        if candidate.height == expected_slot {
+            return Ok(candidate);
+        }
+    }
+
+    let search_end = expected_index.min(slothashes_len);
+    if search_end == 0 {
+        return Err(ExternalSignatureProgramError::InvalidSlothashIndex.into());
+    }
+
+    reverse_linear_search_slot_hash(slothashes_sysvar, expected_slot, search_end)
+}
+
 /// Validates a nonce signature
 pub fn validate_nonce<'a>(
     slothashes_sysvar: SlotHashes<Ref<'a, [u8]>>,
@@ -87,8 +141,12 @@ pub fn validate_nonce<'a>(
         return Err(ExternalSignatureProgramError::ExpiredSlothash.into());
     }
 
-    // Get the slot hash at the index difference
-    let slot_hash = slothashes_sysvar.get_slot_hash(index_difference as usize)?;
+    let expected_slot = most_recent_slot_hash
+        .height
+        .checked_sub(index_difference as u64)
+        .ok_or(ExternalSignatureProgramError::InvalidTruncatedSlot)?;
+    let slot_hash =
+        find_slot_hash_with_fallback(&slothashes_sysvar, expected_slot, index_difference as usize)?;
 
     Ok(NonceData {
         signer_key: nonce_signer.key(),
@@ -99,6 +157,57 @@ pub fn validate_nonce<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn populate_slot_hashes(heights: &[u64]) -> Vec<u64> {
+        // Store the test data as u64s so it is aligned for SlotHash's zero-copy reads.
+        let mut data = Vec::with_capacity(1 + heights.len() * 5);
+        data.push(heights.len() as u64);
+        for height in heights {
+            data.push(*height);
+            data.extend([0; 4]);
+        }
+        data
+    }
+
+    fn slot_hashes_as_bytes(data: &[u64]) -> &[u8] {
+        unsafe {
+            core::slice::from_raw_parts(data.as_ptr().cast::<u8>(), core::mem::size_of_val(data))
+        }
+    }
+
+    #[test]
+    fn test_find_slot_hash_uses_direct_index_for_contiguous_slots() {
+        let contiguous_data = populate_slot_hashes(&[14, 13, 12, 11, 10]);
+        let contiguous =
+            unsafe { SlotHashes::new_unchecked(slot_hashes_as_bytes(&contiguous_data)) };
+        assert_eq!(
+            find_slot_hash_with_fallback(&contiguous, 10, 4)
+                .unwrap()
+                .height,
+            10
+        );
+    }
+
+    #[test]
+    fn test_find_slot_hash_falls_back_for_skipped_slots() {
+        let skipped_data = populate_slot_hashes(&[14, 10, 9]);
+        let skipped = unsafe { SlotHashes::new_unchecked(slot_hashes_as_bytes(&skipped_data)) };
+        assert_eq!(
+            find_slot_hash_with_fallback(&skipped, 10, 4)
+                .unwrap()
+                .height,
+            10
+        );
+    }
+
+    #[test]
+    fn test_find_slot_hash_rejects_absent_target_and_len_index() {
+        let data = populate_slot_hashes(&[14, 12, 9]);
+        let slothashes = unsafe { SlotHashes::new_unchecked(slot_hashes_as_bytes(&data)) };
+
+        assert!(find_slot_hash_with_fallback(&slothashes, 10, 4).is_err());
+        assert!(slothashes.get_slot_hash(3).is_err());
+    }
 
     #[test]
     fn test_truncated_slot_new() {
