@@ -112,6 +112,19 @@ mod test_authentication {
         );
     }
 
+    #[test]
+    fn test_nordpass_session_key_authentication_without_cross_origin() {
+        let payer = Keypair::read_from_file(
+            "tests/p256/keypairs/sinf1bu1CMQaMzeDoysAU7dAp2gs5j2V3vM9W5ZXAyB.json",
+        )
+        .unwrap();
+        let _ = test_session_authentication_from_fixture(
+            &payer,
+            "tests/p256/fixtures/nordpass/creation.json",
+            "tests/p256/fixtures/nordpass/session_key_authentication.json",
+        );
+    }
+
     // #[test]
     fn test_one_password_authentication() {
         let payer = Keypair::read_from_file(

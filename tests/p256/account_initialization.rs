@@ -1,10 +1,12 @@
 use crate::p256::utils::svm::get_valid_slothash;
 use crate::p256::utils::{
     initialization::initialize_passkey_account,
+    parser::parse_webauthn_fixture,
     svm::{create_and_send_svm_transaction, initialize_svm},
 };
 use solana_keypair::Keypair;
 use solana_signer::{EncodableKey, Signer};
+use std::fs;
 
 fn test_creation_from_fixture(path: &str) {
     let payer = Keypair::read_from_file(
@@ -44,5 +46,17 @@ mod test_initialization {
     #[test]
     fn test_one_password_creation() {
         test_creation_from_fixture("tests/p256/fixtures/one-password/creation.json");
+    }
+
+    #[test]
+    fn test_nordpass_creation_without_cross_origin() {
+        let path = "tests/p256/fixtures/nordpass/creation.json";
+        let json_data = fs::read_to_string(path).unwrap();
+        let webauthn_data = parse_webauthn_fixture(&json_data).unwrap();
+        assert!(webauthn_data
+            .client_data_json_reconstruction_params
+            .omits_cross_origin());
+
+        test_creation_from_fixture(path);
     }
 }

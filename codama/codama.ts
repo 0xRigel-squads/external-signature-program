@@ -648,7 +648,7 @@ const root = rootNode(
                         type: numberTypeNode("u8"),
                         docs: [
                             "Packed byte: high nibble = auth type (0x00=create, 0x10=get),",
-                            "low nibble = flags (0x01=crossOrigin, 0x02=http, 0x04=googleExtra).",
+                            "low nibble = flags (0x01=crossOrigin, 0x02=http, 0x04=googleExtra, 0x08=omitCrossOrigin).",
                         ],
                     }),
                     structFieldTypeNode({

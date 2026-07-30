@@ -189,6 +189,15 @@ mod test_authentication {
             "tests/p256/fixtures/ios-crossplatform/authentication.json",
         );
     }
+
+    #[test]
+    fn test_nordpass_authentication_without_cross_origin() {
+        test_authentication_from_fixture(
+            "tests/p256/fixtures/nordpass/creation.json",
+            "tests/p256/fixtures/nordpass/authentication.json",
+        );
+    }
+
     #[test]
     fn test_invalid_slothash() {
         test_authentication_invalid_slothash(
