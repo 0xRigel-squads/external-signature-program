@@ -208,20 +208,20 @@ pub fn process_execute_instructions(accounts: &[AccountInfo], data: &[u8]) -> Pr
             .collect();
 
         // Build the instruction to invoke
-        let instruction_to_invoke = Instruction {
+        let instruction_to_invoke = Box::new(Instruction {
             program_id: execution_context.accounts.instruction_execution_accounts
                 [instruction.program_id_index as usize]
                 .key(),
             data: &instruction.data.as_slice(),
             accounts: &account_metas,
-        };
+        });
 
         // prevent against re-entrancy
         assert_ne!(instruction_to_invoke.program_id, &crate::ID);
 
         // Invoke the instruction
         slice_invoke_signed(
-            &instruction_to_invoke,
+            instruction_to_invoke.as_ref(),
             filtered_account_infos.as_slice(),
             &[Signer::from(
                 &execution_context.execution_account.to_signer_seeds(),
